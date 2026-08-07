@@ -1,0 +1,14 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  flyway:
+    enabled: true
+
+app:
+  jwt:
+    access-secret: test-only-secret-not-for-production-use-1234567890
+    access-expiration-minutes: 15
+    refresh-expiration-days: 30
+    issuer: aquamanager-test
