@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { DataTablePagination } from '@/components/shared/DataTablePagination'
+import { ImportExportButtons } from '@/components/shared/ImportExportButtons'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -60,11 +61,20 @@ export default function MortalidadeListPage() {
         title="Mortalidade"
         description="Registros de perdas por lote para acompanhamento da sobrevivência."
         actions={
-          podeGerenciar && (
-            <Button onClick={() => { setEditing(null); setFormOpen(true) }}>
-              <Plus className="h-4 w-4" /> Novo registro
-            </Button>
-          )
+          <>
+            <ImportExportButtons
+              entidadeLabel="Registros de mortalidade"
+              onDownloadTemplate={mortalidadeApi.baixarModelo}
+              onExport={mortalidadeApi.exportar}
+              onImport={mortalidadeApi.importar}
+              onImportComplete={() => queryClient.invalidateQueries({ queryKey: ['mortalidade'] })}
+            />
+            {podeGerenciar && (
+              <Button onClick={() => { setEditing(null); setFormOpen(true) }}>
+                <Plus className="h-4 w-4" /> Novo registro
+              </Button>
+            )}
+          </>
         }
       />
 

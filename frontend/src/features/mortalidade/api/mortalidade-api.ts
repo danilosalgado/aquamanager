@@ -1,5 +1,6 @@
 import { apiClient } from '@/lib/api-client'
-import type { ApiResponse, PageResponse } from '@/types/api'
+import { baixarBlob } from '@/lib/download'
+import type { ApiResponse, ImportResultado, PageResponse } from '@/types/api'
 
 export interface RegistroMortalidade {
   id: string
@@ -31,4 +32,21 @@ export const mortalidadeApi = {
     apiClient.put<ApiResponse<RegistroMortalidade>>(`/mortalidade/${id}`, payload).then((r) => r.data.data),
 
   remover: (id: string) => apiClient.delete(`/mortalidade/${id}`),
+
+  importar: async (arquivo: File): Promise<ImportResultado> => {
+    const formData = new FormData()
+    formData.append('arquivo', arquivo)
+    const response = await apiClient.post<ApiResponse<ImportResultado>>('/mortalidade/importar', formData)
+    return response.data.data
+  },
+
+  exportar: async () => {
+    const response = await apiClient.get('/mortalidade/exportar', { responseType: 'blob' })
+    baixarBlob(response, 'mortalidade.xlsx')
+  },
+
+  baixarModelo: async () => {
+    const response = await apiClient.get('/mortalidade/importar/modelo', { responseType: 'blob' })
+    baixarBlob(response, 'modelo-mortalidade.xlsx')
+  },
 }

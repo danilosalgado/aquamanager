@@ -1,5 +1,6 @@
 import { apiClient } from '@/lib/api-client'
-import type { ApiResponse, PageResponse } from '@/types/api'
+import { baixarBlob } from '@/lib/download'
+import type { ApiResponse, ImportResultado, PageResponse } from '@/types/api'
 
 export interface RegistroQualidadeAgua {
   id: string
@@ -42,4 +43,21 @@ export const qualidadeAguaApi = {
     apiClient.put<ApiResponse<RegistroQualidadeAgua>>(`/qualidade-agua/${id}`, payload).then((r) => r.data.data),
 
   remover: (id: string) => apiClient.delete(`/qualidade-agua/${id}`),
+
+  importar: async (arquivo: File): Promise<ImportResultado> => {
+    const formData = new FormData()
+    formData.append('arquivo', arquivo)
+    const response = await apiClient.post<ApiResponse<ImportResultado>>('/qualidade-agua/importar', formData)
+    return response.data.data
+  },
+
+  exportar: async () => {
+    const response = await apiClient.get('/qualidade-agua/exportar', { responseType: 'blob' })
+    baixarBlob(response, 'qualidade-agua.xlsx')
+  },
+
+  baixarModelo: async () => {
+    const response = await apiClient.get('/qualidade-agua/importar/modelo', { responseType: 'blob' })
+    baixarBlob(response, 'modelo-qualidade-agua.xlsx')
+  },
 }

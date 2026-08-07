@@ -1,5 +1,6 @@
 import { apiClient } from '@/lib/api-client'
-import type { ApiResponse, PageResponse } from '@/types/api'
+import { baixarBlob } from '@/lib/download'
+import type { ApiResponse, ImportResultado, PageResponse } from '@/types/api'
 
 export interface RegistroCrescimento {
   id: string
@@ -31,4 +32,21 @@ export const crescimentoApi = {
     apiClient.put<ApiResponse<RegistroCrescimento>>(`/crescimento/${id}`, payload).then((r) => r.data.data),
 
   remover: (id: string) => apiClient.delete(`/crescimento/${id}`),
+
+  importar: async (arquivo: File): Promise<ImportResultado> => {
+    const formData = new FormData()
+    formData.append('arquivo', arquivo)
+    const response = await apiClient.post<ApiResponse<ImportResultado>>('/crescimento/importar', formData)
+    return response.data.data
+  },
+
+  exportar: async () => {
+    const response = await apiClient.get('/crescimento/exportar', { responseType: 'blob' })
+    baixarBlob(response, 'crescimento.xlsx')
+  },
+
+  baixarModelo: async () => {
+    const response = await apiClient.get('/crescimento/importar/modelo', { responseType: 'blob' })
+    baixarBlob(response, 'modelo-crescimento.xlsx')
+  },
 }

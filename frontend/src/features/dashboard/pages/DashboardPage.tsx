@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, Legend,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
   AreaChart, Area, LineChart, Line
 } from 'recharts'
 import {
@@ -9,10 +9,48 @@ import {
 import { PageHeader } from '@/components/shared/PageHeader'
 import { StatCard } from '@/components/shared/StatCard'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, type ChartConfig,
+} from '@/components/ui/chart'
 import { dashboardApi } from '../api/dashboard-api'
 import { useAuth } from '@/hooks/use-auth'
 import { formatCurrency, formatNumber } from '@/lib/utils'
 import { WeatherWidget } from '../components/WeatherWidget'
+
+const biomassaConfig = {
+  valor: { label: 'Biomassa (kg)', color: 'hsl(var(--chart-1))' },
+} satisfies ChartConfig
+
+const crescimentoConfig = {
+  valor: { label: 'Peso médio (g)', color: 'hsl(var(--chart-2))' },
+} satisfies ChartConfig
+
+const racaoConfig = {
+  valor: { label: 'Ração (kg)', color: 'hsl(var(--chart-4))' },
+} satisfies ChartConfig
+
+const mortalidadeConfig = {
+  valor: { label: 'Mortos', color: 'hsl(var(--chart-3))' },
+} satisfies ChartConfig
+
+const qualidadeAguaConfig = {
+  temperatura: { label: 'Temperatura (°C)', color: 'hsl(var(--chart-1))' },
+  oxigenioDissolvido: { label: 'Oxigênio (mg/L)', color: 'hsl(var(--chart-2))' },
+  ph: { label: 'pH', color: 'hsl(var(--chart-3))' },
+} satisfies ChartConfig
+
+const saudeConfig = {
+  score: { label: 'Score médio', color: 'hsl(var(--chart-4))' },
+} satisfies ChartConfig
+
+const financeiroConfig = {
+  valorReceita: { label: 'Receita', color: 'hsl(var(--chart-4))' },
+  valorDespesa: { label: 'Despesa', color: 'hsl(var(--destructive))' },
+} satisfies ChartConfig
+
+const producaoTanqueConfig = {
+  biomassaKg: { label: 'Biomassa (kg)', color: 'hsl(var(--chart-1))' },
+} satisfies ChartConfig
 
 export default function DashboardPage() {
   const { usuario, hasRole } = useAuth()
@@ -83,9 +121,9 @@ export default function DashboardPage() {
         <StatCard label="Peixes em produção" value={formatNumber(resumo?.quantidadePeixes)} icon={Fish} loading={isLoading} />
         <StatCard label="Biomassa total" value={`${formatNumber(resumo?.biomassaTotalKg, 1)} kg`} icon={Scale} loading={isLoading} />
         <StatCard label="Peso médio" value={`${formatNumber(resumo?.pesoMedioG, 0)} g`} icon={TrendingUp} loading={isLoading} />
-        
+
         <StatCard label="Consumo Ração (30d)" value={`${formatNumber(totalConsumoRacao, 1)} kg`} icon={Package} loading={isLoading} />
-        
+
         {podeVerFinanceiro && (
           <>
             <StatCard label="Receitas (30d)" value={formatCurrency(resumo?.receita30Dias)} icon={Wallet} loading={isLoading} tone="success" />
@@ -99,7 +137,7 @@ export default function DashboardPage() {
             />
           </>
         )}
-        
+
         <StatCard
           label="Conversão alimentar (FCR)"
           value={resumo?.conversaoAlimentarMedia ? formatNumber(resumo.conversaoAlimentarMedia, 2) : '—'}
@@ -134,22 +172,22 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle>Evolução da Biomassa (90 dias)</CardTitle>
           </CardHeader>
-          <CardContent className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
+          <CardContent>
+            <ChartContainer config={biomassaConfig} className="h-72 w-full">
               <AreaChart data={(biomassa ?? []).map(d => ({ data: formatDate(d.data), valor: d.valor }))}>
                 <defs>
                   <linearGradient id="biomassaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                    <stop offset="5%" stopColor="var(--color-valor)" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="var(--color-valor)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="data" fontSize={12} tickLine={false} />
-                <YAxis fontSize={12} tickLine={false} />
-                <ChartTooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                <Area type="monotone" dataKey="valor" name="Biomassa (kg)" stroke="hsl(var(--primary))" fill="url(#biomassaGrad)" strokeWidth={2} />
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
+                <XAxis dataKey="data" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis fontSize={12} tickLine={false} axisLine={false} width={40} />
+                <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
+                <Area type="monotone" dataKey="valor" stroke="var(--color-valor)" fill="url(#biomassaGrad)" strokeWidth={2} />
               </AreaChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
 
@@ -157,16 +195,16 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle>Crescimento: Peso Médio (30 dias)</CardTitle>
           </CardHeader>
-          <CardContent className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
+          <CardContent>
+            <ChartContainer config={crescimentoConfig} className="h-72 w-full">
               <LineChart data={(crescimento ?? []).map(d => ({ data: formatDate(d.data), valor: d.valor }))}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="data" fontSize={12} tickLine={false} />
-                <YAxis fontSize={12} tickLine={false} />
-                <ChartTooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                <Line type="monotone" dataKey="valor" name="Peso Médio (g)" stroke="hsl(217 91% 60%)" strokeWidth={2} dot={false} />
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
+                <XAxis dataKey="data" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis fontSize={12} tickLine={false} axisLine={false} width={40} />
+                <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
+                <Line type="monotone" dataKey="valor" stroke="var(--color-valor)" strokeWidth={2} dot={false} />
               </LineChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
       </div>
@@ -177,16 +215,16 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle>Consumo de Ração Diário (30 dias)</CardTitle>
           </CardHeader>
-          <CardContent className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
+          <CardContent>
+            <ChartContainer config={racaoConfig} className="h-72 w-full">
               <BarChart data={(consumoRacao ?? []).map(d => ({ data: formatDate(d.data), valor: d.valor }))}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="data" fontSize={12} tickLine={false} />
-                <YAxis fontSize={12} tickLine={false} />
-                <ChartTooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                <Bar dataKey="valor" name="Ração (kg)" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} />
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
+                <XAxis dataKey="data" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis fontSize={12} tickLine={false} axisLine={false} width={40} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar dataKey="valor" fill="var(--color-valor)" radius={[4, 4, 0, 0]} />
               </BarChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
 
@@ -194,16 +232,16 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle>Mortalidade Diária (30 dias)</CardTitle>
           </CardHeader>
-          <CardContent className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
+          <CardContent>
+            <ChartContainer config={mortalidadeConfig} className="h-72 w-full">
               <BarChart data={(mortalidade ?? []).map(d => ({ data: formatDate(d.data), valor: d.valor }))}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="data" fontSize={12} tickLine={false} />
-                <YAxis fontSize={12} tickLine={false} />
-                <ChartTooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                <Bar dataKey="valor" name="Mortos" fill="hsl(var(--warning))" radius={[4, 4, 0, 0]} />
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
+                <XAxis dataKey="data" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis fontSize={12} tickLine={false} axisLine={false} width={40} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar dataKey="valor" fill="var(--color-valor)" radius={[4, 4, 0, 0]} />
               </BarChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
       </div>
@@ -214,19 +252,19 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle>Qualidade da Água Média (30 dias)</CardTitle>
           </CardHeader>
-          <CardContent className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
+          <CardContent>
+            <ChartContainer config={qualidadeAguaConfig} className="h-72 w-full">
               <LineChart data={(qualidadeAgua ?? []).map(d => ({ ...d, data: formatDate(d.data) }))}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="data" fontSize={12} tickLine={false} />
-                <YAxis fontSize={12} tickLine={false} />
-                <ChartTooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Line type="monotone" dataKey="temperatura" name="Temperatura (°C)" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="oxigenioDissolvido" name="Oxigênio (mg/L)" stroke="hsl(217 91% 60%)" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="ph" name="pH" stroke="hsl(38 92% 50%)" strokeWidth={2} dot={false} />
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
+                <XAxis dataKey="data" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis fontSize={12} tickLine={false} axisLine={false} width={40} />
+                <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
+                <ChartLegend content={<ChartLegendContent />} />
+                <Line type="monotone" dataKey="temperatura" stroke="var(--color-temperatura)" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="oxigenioDissolvido" stroke="var(--color-oxigenioDissolvido)" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="ph" stroke="var(--color-ph)" strokeWidth={2} dot={false} />
               </LineChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
 
@@ -234,22 +272,22 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle>Índice de saúde médio (30 dias)</CardTitle>
           </CardHeader>
-          <CardContent className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
+          <CardContent>
+            <ChartContainer config={saudeConfig} className="h-72 w-full">
               <AreaChart data={(saude ?? []).map(s => ({ data: formatDate(s.data), score: s.scoreMedio }))}>
                 <defs>
                   <linearGradient id="saudeGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--success))" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="hsl(var(--success))" stopOpacity={0} />
+                    <stop offset="5%" stopColor="var(--color-score)" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="var(--color-score)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="data" fontSize={12} tickLine={false} />
-                <YAxis domain={[0, 100]} fontSize={12} tickLine={false} />
-                <ChartTooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                <Area type="monotone" dataKey="score" name="Score médio" stroke="hsl(var(--success))" fill="url(#saudeGradient)" strokeWidth={2} />
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
+                <XAxis dataKey="data" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis domain={[0, 100]} fontSize={12} tickLine={false} axisLine={false} width={40} />
+                <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
+                <Area type="monotone" dataKey="score" stroke="var(--color-score)" fill="url(#saudeGradient)" strokeWidth={2} />
               </AreaChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
       </div>
@@ -261,18 +299,18 @@ export default function DashboardPage() {
             <CardHeader>
               <CardTitle>Receita x Despesa (últimos 6 meses)</CardTitle>
             </CardHeader>
-            <CardContent className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
+            <CardContent>
+              <ChartContainer config={financeiroConfig} className="h-72 w-full">
                 <BarChart data={financeiro ?? []}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                  <XAxis dataKey="rotulo" fontSize={12} tickLine={false} />
-                  <YAxis fontSize={12} tickLine={false} tickFormatter={(v) => formatCurrency(v)} width={90} />
-                  <ChartTooltip formatter={(v: number) => formatCurrency(v)} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="valorReceita" name="Receita" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="valorDespesa" name="Despesa" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
+                  <XAxis dataKey="rotulo" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => formatCurrency(v)} width={90} />
+                  <ChartTooltip content={<ChartTooltipContent formatter={(v) => formatCurrency(Number(v))} />} />
+                  <ChartLegend content={<ChartLegendContent />} />
+                  <Bar dataKey="valorReceita" fill="var(--color-valorReceita)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="valorDespesa" fill="var(--color-valorDespesa)" radius={[4, 4, 0, 0]} />
                 </BarChart>
-              </ResponsiveContainer>
+              </ChartContainer>
             </CardContent>
           </Card>
         ) : (
@@ -280,16 +318,16 @@ export default function DashboardPage() {
             <CardHeader>
               <CardTitle>Produção por Tanque</CardTitle>
             </CardHeader>
-            <CardContent className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
+            <CardContent>
+              <ChartContainer config={producaoTanqueConfig} className="h-72 w-full">
                 <BarChart data={producaoTanques ?? []}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                  <XAxis dataKey="tanqueNome" fontSize={12} tickLine={false} />
-                  <YAxis fontSize={12} tickLine={false} />
-                  <ChartTooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                  <Bar dataKey="biomassaKg" name="Biomassa (kg)" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
+                  <XAxis dataKey="tanqueNome" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis fontSize={12} tickLine={false} axisLine={false} width={40} />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar dataKey="biomassaKg" fill="var(--color-biomassaKg)" radius={[4, 4, 0, 0]} />
                 </BarChart>
-              </ResponsiveContainer>
+              </ChartContainer>
             </CardContent>
           </Card>
         )}
@@ -328,22 +366,22 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-      
+
       {podeVerFinanceiro && (
         <Card>
           <CardHeader>
             <CardTitle>Produção por Tanque</CardTitle>
           </CardHeader>
-          <CardContent className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
+          <CardContent>
+            <ChartContainer config={producaoTanqueConfig} className="h-72 w-full">
               <BarChart data={producaoTanques ?? []}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="tanqueNome" fontSize={12} tickLine={false} />
-                <YAxis fontSize={12} tickLine={false} />
-                <ChartTooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                <Bar dataKey="biomassaKg" name="Biomassa (kg)" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
+                <XAxis dataKey="tanqueNome" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis fontSize={12} tickLine={false} axisLine={false} width={40} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar dataKey="biomassaKg" fill="var(--color-biomassaKg)" radius={[4, 4, 0, 0]} />
               </BarChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
       )}

@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { DataTablePagination } from '@/components/shared/DataTablePagination'
+import { ImportExportButtons } from '@/components/shared/ImportExportButtons'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -60,11 +61,20 @@ export default function AlimentacaoListPage() {
         title="Alimentação"
         description="Histórico de arraçoamento dos lotes."
         actions={
-          podeGerenciar && (
-            <Button onClick={() => { setEditing(null); setFormOpen(true) }}>
-              <Plus className="h-4 w-4" /> Nova alimentação
-            </Button>
-          )
+          <>
+            <ImportExportButtons
+              entidadeLabel="Registros de alimentação"
+              onDownloadTemplate={alimentacaoApi.baixarModelo}
+              onExport={alimentacaoApi.exportar}
+              onImport={alimentacaoApi.importar}
+              onImportComplete={() => queryClient.invalidateQueries({ queryKey: ['alimentacao'] })}
+            />
+            {podeGerenciar && (
+              <Button onClick={() => { setEditing(null); setFormOpen(true) }}>
+                <Plus className="h-4 w-4" /> Nova alimentação
+              </Button>
+            )}
+          </>
         }
       />
 

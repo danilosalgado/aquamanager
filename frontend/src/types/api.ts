@@ -23,3 +23,14 @@ export interface PageResponse<T> {
   totalPages: number
   last: boolean
 }
+
+export interface ImportErro {
+  linha: number
+  motivo: string
+}
+
+export interface ImportResultado {
+  totalLinhas: number
+  importados: number
+  erros: ImportErro[]
+}

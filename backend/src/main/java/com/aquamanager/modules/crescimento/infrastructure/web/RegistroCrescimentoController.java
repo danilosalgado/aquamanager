@@ -4,6 +4,7 @@ import com.aquamanager.modules.crescimento.application.RegistroCrescimentoServic
 import com.aquamanager.modules.crescimento.application.dto.RegistroCrescimentoRequest;
 import com.aquamanager.modules.crescimento.application.dto.RegistroCrescimentoResponse;
 import com.aquamanager.modules.crescimento.infrastructure.mapper.RegistroCrescimentoMapper;
+import com.aquamanager.shared.infrastructure.excel.ImportResultado;
 import com.aquamanager.shared.infrastructure.security.SecurityUtils;
 import com.aquamanager.shared.infrastructure.web.ApiResponse;
 import com.aquamanager.shared.infrastructure.web.PageResponse;
@@ -11,6 +12,9 @@ import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/v1/crescimento")
@@ -64,5 +69,32 @@ public class RegistroCrescimentoController {
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE', 'FUNCIONARIO')")
     public void remover(@PathVariable UUID id) {
         registroCrescimentoService.remover(SecurityUtils.currentEmpresaId(), id);
+    }
+
+    @PostMapping("/importar")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE', 'FUNCIONARIO')")
+    public ApiResponse<ImportResultado> importar(@RequestParam("arquivo") MultipartFile arquivo) {
+        var resultado = registroCrescimentoService.importar(
+                SecurityUtils.currentEmpresaId(), SecurityUtils.currentUserId(), arquivo);
+        return ApiResponse.of(resultado);
+    }
+
+    @GetMapping("/exportar")
+    public ResponseEntity<byte[]> exportar() {
+        byte[] arquivo = registroCrescimentoService.exportar(SecurityUtils.currentEmpresaId());
+        return arquivoExcel(arquivo, "crescimento.xlsx");
+    }
+
+    @GetMapping("/importar/modelo")
+    public ResponseEntity<byte[]> baixarModelo() {
+        byte[] arquivo = registroCrescimentoService.gerarModeloImportacao();
+        return arquivoExcel(arquivo, "modelo-crescimento.xlsx");
+    }
+
+    private ResponseEntity<byte[]> arquivoExcel(byte[] conteudo, String nomeArquivo) {
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + nomeArquivo + "\"")
+                .body(conteudo);
     }
 }

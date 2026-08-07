@@ -1,5 +1,6 @@
 import { apiClient } from '@/lib/api-client'
-import type { ApiResponse, PageResponse } from '@/types/api'
+import { baixarBlob } from '@/lib/download'
+import type { ApiResponse, ImportResultado, PageResponse } from '@/types/api'
 
 export interface Alimentacao {
   id: string
@@ -34,4 +35,21 @@ export const alimentacaoApi = {
     apiClient.put<ApiResponse<Alimentacao>>(`/alimentacao/${id}`, payload).then((r) => r.data.data),
 
   remover: (id: string) => apiClient.delete(`/alimentacao/${id}`),
+
+  importar: async (arquivo: File): Promise<ImportResultado> => {
+    const formData = new FormData()
+    formData.append('arquivo', arquivo)
+    const response = await apiClient.post<ApiResponse<ImportResultado>>('/alimentacao/importar', formData)
+    return response.data.data
+  },
+
+  exportar: async () => {
+    const response = await apiClient.get('/alimentacao/exportar', { responseType: 'blob' })
+    baixarBlob(response, 'alimentacao.xlsx')
+  },
+
+  baixarModelo: async () => {
+    const response = await apiClient.get('/alimentacao/importar/modelo', { responseType: 'blob' })
+    baixarBlob(response, 'modelo-alimentacao.xlsx')
+  },
 }
