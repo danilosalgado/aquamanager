@@ -1,0 +1,44 @@
+# --- Backend (Java/Maven) ---
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+HELP.md
+
+# --- Frontend (Node/Vite) ---
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/.vite/
+frontend/coverage/
+*.local
+*.tsbuildinfo
+
+# --- Claude Code (machine-local config) ---
+.claude/settings.local.json
+
+# --- Env & secrets ---
+.env
+.env.*
+!.env.example
+backend/src/main/resources/application-local.yml
+
+# --- IDE ---
+.idea/
+.vscode/
+*.iml
+.classpath
+.project
+.settings/
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- Docker ---
+docker-data/
+
+# --- Logs ---
+*.log
+logs/
