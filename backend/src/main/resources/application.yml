@@ -55,7 +55,9 @@ spring:
       write-dates-as-timestamps: false
 
 server:
-  port: ${BACKEND_PORT:8080}
+  # PORT é injetada automaticamente por PaaS como o Railway; BACKEND_PORT continua
+  # valendo para docker-compose local, e 8080 é o último fallback.
+  port: ${PORT:${BACKEND_PORT:8080}}
   error:
     include-message: never
     include-stacktrace: never
