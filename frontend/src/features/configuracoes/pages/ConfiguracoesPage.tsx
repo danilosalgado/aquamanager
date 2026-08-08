@@ -83,7 +83,6 @@ const recursoLabels: Record<string, string> = {
   agenda: 'Agenda',
   relatorios: 'Relatórios',
   api: 'API pública',
-  whiteLabel: 'White label',
   backupAutomatico: 'Backup automático',
 }
 
