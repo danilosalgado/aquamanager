@@ -1,11 +1,23 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import ReactMarkdown from 'react-markdown'
 import { Bot, User, Send, X, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { assistenteApi } from '../api/assistente-api'
 import { extractErrorCode, extractErrorMessage } from '@/lib/api-client'
 import { cn } from '@/lib/utils'
+
+const markdownComponents = {
+  p: ({ ...props }) => <p className="mb-2 last:mb-0 leading-relaxed" {...props} />,
+  strong: ({ ...props }) => <strong className="font-semibold text-foreground" {...props} />,
+  em: ({ ...props }) => <em className="italic" {...props} />,
+  ul: ({ ...props }) => <ul className="mb-2 ml-4 list-disc space-y-0.5 last:mb-0" {...props} />,
+  ol: ({ ...props }) => <ol className="mb-2 ml-4 list-decimal space-y-0.5 last:mb-0" {...props} />,
+  li: ({ ...props }) => <li className="leading-relaxed" {...props} />,
+  code: ({ ...props }) => <code className="rounded bg-background/60 px-1 py-0.5 font-mono text-xs" {...props} />,
+  a: ({ ...props }) => <a className="text-primary underline underline-offset-2" target="_blank" rel="noreferrer" {...props} />,
+}
 
 interface Mensagem {
   id: string
@@ -83,10 +95,16 @@ export function AssistenteChat({ open, onClose }: AssistenteChatProps) {
               )}
             </div>
             <div className={cn(
-              "px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap",
-              msg.role === 'user' ? "bg-primary text-primary-foreground rounded-tr-sm" : "bg-muted text-foreground rounded-tl-sm border border-border/50"
+              "px-3 py-2 rounded-2xl text-sm",
+              msg.role === 'user'
+                ? "bg-primary text-primary-foreground rounded-tr-sm whitespace-pre-wrap"
+                : "bg-muted text-foreground rounded-tl-sm border border-border/50"
             )}>
-              {msg.content}
+              {msg.role === 'assistant' ? (
+                <ReactMarkdown components={markdownComponents}>{msg.content}</ReactMarkdown>
+              ) : (
+                msg.content
+              )}
             </div>
             {msg.upgradeNecessario && (
               <Button asChild size="sm" className="mt-2">
