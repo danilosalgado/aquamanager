@@ -255,6 +255,12 @@ function PlanoTab() {
     queryFn: () => planosApi.listar(),
   })
 
+  const { data: empresa } = useQuery({
+    queryKey: ['empresa', 'me'],
+    queryFn: () => empresaApi.buscarMinhaEmpresa(),
+  })
+  const isento = empresa?.isentoCobranca ?? false
+
   const pendente = assinatura?.status === 'PENDENTE'
 
   useEffect(() => {
@@ -352,6 +358,23 @@ function PlanoTab() {
 
   const ativa = assinatura?.status === 'ATIVA'
   const plano = planos?.[0]
+
+  if (isento) {
+    return (
+      <div className="mt-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-primary" /> Conta administrativa
+            </CardTitle>
+            <CardDescription>
+              Esta conta gerencia a plataforma AquaManager e não está sujeita a cobrança ou período de teste.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="mt-4 space-y-6">

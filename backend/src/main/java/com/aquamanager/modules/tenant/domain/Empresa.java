@@ -56,4 +56,12 @@ public class Empresa extends BaseEntity {
 
     @Column(name = "trial_ends_at", nullable = false)
     private Instant trialEndsAt;
+
+    /**
+     * Contas administrativas da plataforma (não clientes): não entram no trial, não
+     * podem gerar checkout/cobrança e ficam de fora do bloqueio automático por trial
+     * expirado.
+     */
+    @Column(name = "isento_cobranca", nullable = false)
+    private boolean isentoCobranca = false;
 }

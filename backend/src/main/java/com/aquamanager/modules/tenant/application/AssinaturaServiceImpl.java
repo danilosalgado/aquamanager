@@ -46,6 +46,9 @@ public class AssinaturaServiceImpl implements AssinaturaService {
     public Assinatura alterarPlano(UUID empresaId, String codigoPlano) {
         Empresa empresa = empresaRepository.findById(empresaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Empresa", empresaId));
+        if (empresa.isIsentoCobranca()) {
+            throw new BusinessException("ADMIN_EXEMPT", "Contas administrativas da plataforma não geram cobrança.");
+        }
 
         PlanoCodigo codigo;
         try {
@@ -136,6 +139,9 @@ public class AssinaturaServiceImpl implements AssinaturaService {
     public CheckoutSessionResult criarCheckoutSession(UUID empresaId) {
         Empresa empresa = empresaRepository.findById(empresaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Empresa", empresaId));
+        if (empresa.isIsentoCobranca()) {
+            throw new BusinessException("ADMIN_EXEMPT", "Contas administrativas da plataforma não geram cobrança.");
+        }
         Plano plano = planoRepository.findByCodigo(PlanoCodigo.PROFESSIONAL)
                 .orElseThrow(() -> new IllegalStateException("Plano padrão não encontrado — seeds do Flyway ausentes."));
 

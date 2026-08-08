@@ -24,6 +24,7 @@ export interface Empresa {
   email: string | null
   status: EmpresaStatus
   trialEndsAt: string | null
+  isentoCobranca: boolean
   plano: Plano
 }
 

@@ -14,6 +14,7 @@ public record EmpresaResponse(
         String email,
         String status,
         Instant trialEndsAt,
+        boolean isentoCobranca,
         PlanoResponse plano
 ) {
 }

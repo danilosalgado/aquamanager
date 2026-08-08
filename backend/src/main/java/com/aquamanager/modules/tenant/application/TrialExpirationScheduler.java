@@ -27,6 +27,7 @@ public class TrialExpirationScheduler {
         tenantSessionManager.runAsSystem(() -> {
             Instant now = Instant.now();
             var expiradas = empresaRepository.findAll().stream()
+                    .filter(e -> !e.isIsentoCobranca())
                     .filter(e -> e.getStatus() == EmpresaStatus.TRIAL && e.getTrialEndsAt().isBefore(now))
                     .toList();
 
