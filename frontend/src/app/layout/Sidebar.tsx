@@ -1,11 +1,18 @@
 import { NavLink } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { Waves } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { navGroups } from './nav-config'
 import { useAuth } from '@/hooks/use-auth'
+import { empresaApi } from '@/features/configuracoes/api/empresa-api'
 
 export function Sidebar({ className }: { className?: string }) {
   const { hasRole } = useAuth()
+  const { data: empresa } = useQuery({
+    queryKey: ['empresa', 'me'],
+    queryFn: () => empresaApi.buscarMinhaEmpresa(),
+  })
+  const isAdmin = empresa?.isentoCobranca ?? false
 
   return (
     <aside className={cn('flex h-full w-64 flex-col border-r border-border bg-card/50', className)}>
@@ -24,7 +31,7 @@ export function Sidebar({ className }: { className?: string }) {
             </p>
             <div className="space-y-0.5">
               {group.items
-                .filter((item) => !item.roles || hasRole(...item.roles))
+                .filter((item) => (item.adminOnly ? isAdmin : !item.roles || hasRole(...item.roles)))
                 .map((item) => (
                   <NavLink
                     key={item.to}

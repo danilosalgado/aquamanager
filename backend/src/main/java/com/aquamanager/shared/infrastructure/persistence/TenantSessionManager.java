@@ -39,8 +39,14 @@ public class TenantSessionManager {
     /**
      * Executa {@code action} com o isolamento multi-tenant explicitamente
      * desativado (bypass de RLS + filtro Hibernate desabilitado), para jobs
-     * internos legitimamente cross-tenant (ex.: expiração de trial). Nunca deve
-     * ser alcançável a partir de uma requisição HTTP autenticada.
+     * internos legitimamente cross-tenant (ex.: expiração de trial). Não deve ser
+     * alcançável a partir de uma requisição HTTP autenticada comum.
+     *
+     * Única exceção deliberada: {@code AdminUsuarioServiceImpl}, usado pelo painel
+     * administrativo da plataforma — mas só depois de verificar explicitamente que
+     * a empresa do chamador é {@code isentoCobranca} (conta administrativa, não
+     * cliente). Qualquer novo uso a partir de um endpoint HTTP precisa do mesmo
+     * tipo de guarda checada ANTES de chamar este método.
      */
     public <T> T runAsSystem(Supplier<T> action) {
         Session session = entityManager.unwrap(Session.class);

@@ -9,6 +9,8 @@ export interface NavItem {
   to: string
   icon: typeof LayoutDashboard
   roles?: Role[]
+  /** Só aparece para contas administrativas da plataforma (empresa.isentoCobranca). */
+  adminOnly?: boolean
 }
 
 export interface NavGroup {
@@ -51,7 +53,7 @@ export const navGroups: NavGroup[] = [
   {
     title: 'Empresa',
     items: [
-      { label: 'Usuários', to: '/usuarios', icon: UserCog, roles: ['ADMINISTRADOR', 'GERENTE'] },
+      { label: 'Usuários', to: '/admin/usuarios', icon: UserCog, adminOnly: true },
       { label: 'Empresa & Plano', to: '/configuracoes', icon: Building2, roles: ['ADMINISTRADOR'] },
     ],
   },

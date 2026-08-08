@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { ProtectedRoute } from './ProtectedRoute'
 import { RoleGuard } from './RoleGuard'
+import { AdminGuard } from './AdminGuard'
 import { AppShell } from '@/app/layout/AppShell'
 
 const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'))
@@ -29,6 +30,7 @@ const FinanceiroListPage = lazy(() => import('@/features/financeiro/pages/Financ
 const ClientesListPage = lazy(() => import('@/features/clientes/pages/ClientesListPage'))
 const FornecedoresListPage = lazy(() => import('@/features/fornecedores/pages/FornecedoresListPage'))
 const UsuariosListPage = lazy(() => import('@/features/usuarios/pages/UsuariosListPage'))
+const AdminUsuariosListPage = lazy(() => import('@/features/admin/pages/AdminUsuariosListPage'))
 const ConfiguracoesPage = lazy(() => import('@/features/configuracoes/pages/ConfiguracoesPage'))
 const PerfilPage = lazy(() => import('@/features/configuracoes/pages/PerfilPage'))
 
@@ -78,6 +80,9 @@ export function AppRoutes() {
             </Route>
             <Route element={<RoleGuard roles={['ADMINISTRADOR']} />}>
               <Route path="/configuracoes" element={<ConfiguracoesPage />} />
+              <Route element={<AdminGuard />}>
+                <Route path="/admin/usuarios" element={<AdminUsuariosListPage />} />
+              </Route>
             </Route>
           </Route>
         </Route>
