@@ -6,6 +6,7 @@ import com.aquamanager.modules.tenant.domain.Empresa;
 import com.aquamanager.modules.tenant.domain.Plano;
 import com.aquamanager.shared.domain.exception.BusinessException;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -75,5 +76,36 @@ public class AsaasPaymentGateway implements PaymentGateway {
     @Override
     public void cancelarAssinatura(String subscriptionId) {
         restClient.delete().uri("/subscriptions/{id}", subscriptionId).retrieve().toBodilessEntity();
+    }
+
+    @Override
+    public CheckoutSessionResult criarCheckoutSession(Empresa empresa, String customerId, Plano plano,
+                                                        String successUrl, String cancelUrl) {
+        String custId = customerId != null ? customerId : criarCliente(empresa).customerId();
+        PaymentSubscriptionResult assinatura = criarAssinatura(empresa, custId, plano);
+        String invoiceUrl = buscarUrlPrimeiraFatura(assinatura.subscriptionId());
+        return new CheckoutSessionResult(assinatura.subscriptionId(), invoiceUrl, custId);
+    }
+
+    /**
+     * A criação da assinatura (billingType=UNDEFINED) já gera a primeira fatura no Asaas;
+     * essa fatura hospedada (invoiceUrl) é onde o cliente escolhe PIX/boleto/cartão e paga
+     * de fato — é ela que deve ser usada como link de checkout, nunca a própria assinatura.
+     */
+    @SuppressWarnings("unchecked")
+    private String buscarUrlPrimeiraFatura(String subscriptionId) {
+        Map<String, Object> response = restClient.get()
+                .uri(uriBuilder -> uriBuilder.path("/payments")
+                        .queryParam("subscription", subscriptionId)
+                        .queryParam("limit", 1)
+                        .build())
+                .retrieve()
+                .body(Map.class);
+
+        List<Map<String, Object>> faturas = response == null ? null : (List<Map<String, Object>>) response.get("data");
+        if (faturas == null || faturas.isEmpty() || faturas.get(0).get("invoiceUrl") == null) {
+            throw new BusinessException("ASAAS_ERROR", "Nenhuma fatura foi gerada para a assinatura no Asaas.");
+        }
+        return (String) faturas.get(0).get("invoiceUrl");
     }
 }

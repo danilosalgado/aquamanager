@@ -43,6 +43,13 @@ public interface PaymentGateway {
     record PaymentSubscriptionResult(String subscriptionId, java.time.LocalDate proximoVencimento) {
     }
 
-    record CheckoutSessionResult(String sessionId, String checkoutUrl) {
+    /**
+     * customerId vem preenchido quando o gateway já cria a assinatura de forma síncrona ao
+     * gerar o link de checkout (Asaas: a assinatura existe desde já, com uma fatura em
+     * aberto) — nesse caso o service layer persiste uma {@code Assinatura} PENDENTE
+     * imediatamente. Fica null quando o gateway só cria a assinatura após o pagamento
+     * (Stripe: o webhook checkout.session.completed é quem informa cliente/assinatura).
+     */
+    record CheckoutSessionResult(String sessionId, String checkoutUrl, String customerId) {
     }
 }

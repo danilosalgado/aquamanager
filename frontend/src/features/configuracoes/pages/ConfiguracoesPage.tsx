@@ -1,11 +1,23 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Check, X, Building2, CreditCard } from 'lucide-react'
+import {
+  Check,
+  X,
+  Building2,
+  CreditCard,
+  ShieldCheck,
+  Loader2,
+  ExternalLink,
+  Sparkles,
+  Infinity as InfinityIcon,
+  QrCode,
+  Barcode,
+} from 'lucide-react'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { Button } from '@/components/ui/button'
@@ -38,10 +50,22 @@ const statusLabels: Record<EmpresaStatus, string> = {
   BLOQUEADA: 'Bloqueada',
 }
 
+const assinaturaStatusLabels: Record<string, string> = {
+  ...statusLabels,
+  PENDENTE: 'Aguardando pagamento',
+}
+
 function statusVariant(status: EmpresaStatus) {
   if (status === 'ATIVA') return 'success' as const
   if (status === 'TRIAL') return 'warning' as const
   if (status === 'INADIMPLENTE' || status === 'BLOQUEADA') return 'destructive' as const
+  return 'secondary' as const
+}
+
+function assinaturaStatusVariant(status: string) {
+  if (status === 'ATIVA') return 'success' as const
+  if (status === 'TRIAL' || status === 'PENDENTE') return 'warning' as const
+  if (status === 'INADIMPLENTE') return 'destructive' as const
   return 'secondary' as const
 }
 
@@ -219,6 +243,8 @@ function PlanoTab() {
   const queryClient = useQueryClient()
   const [cancelando, setCancelando] = useState(false)
   const [searchParams, setSearchParams] = useSearchParams()
+  const [linkPagamento, setLinkPagamento] = useState<string | null>(null)
+  const avisouConfirmacao = useRef(false)
 
   const { data: assinatura, isLoading: carregandoAssinatura } = useQuery({
     queryKey: ['billing', 'assinatura'],
@@ -229,6 +255,8 @@ function PlanoTab() {
     queryKey: ['planos'],
     queryFn: () => planosApi.listar(),
   })
+
+  const pendente = assinatura?.status === 'PENDENTE'
 
   useEffect(() => {
     const checkout = searchParams.get('checkout')
@@ -253,10 +281,43 @@ function PlanoTab() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
+  // Enquanto a assinatura está PENDENTE (link de pagamento aberto numa outra aba),
+  // reconsulta periodicamente — a confirmação chega via webhook do gateway, não há
+  // como o navegador ser avisado ativamente.
+  useEffect(() => {
+    if (!pendente) {
+      avisouConfirmacao.current = false
+      return
+    }
+    const interval = setInterval(() => {
+      queryClient.invalidateQueries({ queryKey: ['billing', 'assinatura'] })
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [pendente, queryClient])
+
+  useEffect(() => {
+    if (assinatura?.status === 'ATIVA' && !avisouConfirmacao.current && linkPagamento) {
+      avisouConfirmacao.current = true
+      setLinkPagamento(null)
+      toast.success('Pagamento confirmado! Sua assinatura está ativa. 🎉')
+      queryClient.invalidateQueries({ queryKey: ['empresa', 'me'] })
+    }
+  }, [assinatura?.status, linkPagamento, queryClient])
+
   const checkoutMutation = useMutation({
     mutationFn: () => billingApi.criarCheckoutSession(),
     onSuccess: (url) => {
-      window.location.href = url
+      // O fluxo síncrono (Mock/legado) já ativa a assinatura no backend e devolve uma
+      // URL da própria aplicação — nesse caso é só navegar. Gateways reais (Asaas/Stripe)
+      // devolvem uma URL hospedada externa: abrimos em nova aba e ficamos observando o
+      // status por aqui, porque o Asaas não retorna o usuário automaticamente ao app.
+      if (url.startsWith(window.location.origin)) {
+        window.location.href = url
+        return
+      }
+      setLinkPagamento(url)
+      window.open(url, '_blank', 'noopener,noreferrer')
+      queryClient.invalidateQueries({ queryKey: ['billing', 'assinatura'] })
     },
     onError: (error) => toast.error(extractErrorMessage(error, 'Não foi possível iniciar o checkout.')),
   })
@@ -301,9 +362,13 @@ function PlanoTab() {
             <CardTitle className="flex items-center gap-2">
               <Building2 className="h-4 w-4 text-primary" /> Status da assinatura
             </CardTitle>
-            <CardDescription>
-              Plano {assinatura.plano.nome} · {formatCurrency(assinatura.plano.precoMensal)}/mês ·{' '}
-              {statusLabels[assinatura.status as EmpresaStatus] ?? assinatura.status}
+            <CardDescription className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span>
+                Plano {assinatura.plano.nome} · {formatCurrency(assinatura.plano.precoMensal)}/mês
+              </span>
+              <Badge variant={assinaturaStatusVariant(assinatura.status)}>
+                {assinaturaStatusLabels[assinatura.status] ?? assinatura.status}
+              </Badge>
             </CardDescription>
           </CardHeader>
           {ativa && (
@@ -324,10 +389,35 @@ function PlanoTab() {
         </Card>
       )}
 
-      {!ativa && plano && (
+      {pendente && (
+        <Card className="border-warning/40 bg-warning/5">
+          <CardContent className="flex flex-col items-center gap-3 py-8 text-center">
+            <Loader2 className="h-8 w-8 animate-spin text-warning-foreground" />
+            <div>
+              <p className="font-medium text-foreground">Aguardando confirmação do pagamento</p>
+              <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                Finalize o pagamento (PIX, boleto ou cartão) na aba que abrimos. Assim que o gateway confirmar,
+                sua assinatura é ativada automaticamente aqui — não precisa recarregar a página.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              {linkPagamento && (
+                <Button variant="outline" size="sm" onClick={() => window.open(linkPagamento, '_blank', 'noopener,noreferrer')}>
+                  <ExternalLink className="h-4 w-4" /> Reabrir página de pagamento
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" onClick={() => setCancelando(true)}>
+                Desistir e cancelar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {!ativa && !pendente && plano && (
         <>
           <Separator />
-          <div className="max-w-sm">
+          <div className="max-w-md">
             <PlanoCard plano={plano} loading={checkoutMutation.isPending} onAssinar={() => checkoutMutation.mutate()} />
           </div>
         </>
@@ -336,9 +426,13 @@ function PlanoTab() {
       <ConfirmDialog
         open={cancelando}
         onOpenChange={setCancelando}
-        title="Cancelar assinatura?"
-        description="Sua empresa perderá acesso aos recursos do plano ao final do período vigente."
-        confirmLabel="Cancelar assinatura"
+        title={pendente ? 'Desistir do pagamento?' : 'Cancelar assinatura?'}
+        description={
+          pendente
+            ? 'A fatura em aberto será cancelada e você volta pra tela de assinatura — nenhum valor chegou a ser cobrado.'
+            : 'Sua empresa perderá acesso aos recursos do plano ao final do período vigente.'
+        }
+        confirmLabel={pendente ? 'Desistir e cancelar' : 'Cancelar assinatura'}
         loading={cancelarMutation.isPending}
         onConfirm={() => cancelarMutation.mutate()}
       />
@@ -348,25 +442,48 @@ function PlanoTab() {
 
 function PlanoCard({ plano, loading, onAssinar }: { plano: Plano; loading: boolean; onAssinar: () => void }) {
   return (
-    <Card className="border-primary shadow-md">
-      <CardHeader>
-        <CardTitle>{plano.nome}</CardTitle>
-        <CardDescription>
-          <span className="text-2xl font-semibold text-foreground">{formatCurrency(plano.precoMensal)}</span>
-          <span className="text-sm">/mês</span>
+    <Card className="relative overflow-hidden border-primary shadow-lg shadow-primary/10">
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-primary/60 to-primary" />
+
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle>{plano.nome}</CardTitle>
+          <Badge className="gap-1">
+            <Sparkles className="h-3 w-3" /> Plano único
+          </Badge>
+        </div>
+        <CardDescription className="pt-2">
+          <span className="text-3xl font-bold text-foreground">{formatCurrency(plano.precoMensal)}</span>
+          <span className="text-sm"> /mês</span>
+          <p className="mt-1 text-xs text-muted-foreground">Cancele quando quiser, sem multa ou fidelidade.</p>
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-2 text-sm">
-        <p className="text-muted-foreground">{formatLimite(plano.limiteTanques, 'tanque', 'tanques')}</p>
-        <p className="text-muted-foreground">{formatLimite(plano.limiteUsuarios, 'usuário', 'usuários')}</p>
-        <Separator className="my-2" />
+
+      <CardContent className="space-y-4 text-sm">
+        <div className="grid grid-cols-2 gap-2">
+          <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/40 px-3 py-2">
+            <InfinityIcon className="h-4 w-4 shrink-0 text-primary" />
+            <span className="text-xs leading-tight text-muted-foreground">
+              {formatLimite(plano.limiteTanques, 'tanque', 'tanques')}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/40 px-3 py-2">
+            <InfinityIcon className="h-4 w-4 shrink-0 text-primary" />
+            <span className="text-xs leading-tight text-muted-foreground">
+              {formatLimite(plano.limiteUsuarios, 'usuário', 'usuários')}
+            </span>
+          </div>
+        </div>
+
+        <Separator />
+
         <ul className="space-y-1.5">
           {Object.entries(plano.recursos).map(([recurso, incluido]) => (
             <li key={recurso} className="flex items-center gap-2">
               {incluido ? (
-                <Check className="h-4 w-4 text-success" />
+                <Check className="h-4 w-4 shrink-0 text-success" />
               ) : (
-                <X className="h-4 w-4 text-muted-foreground" />
+                <X className="h-4 w-4 shrink-0 text-muted-foreground" />
               )}
               <span className={incluido ? '' : 'text-muted-foreground line-through'}>
                 {recursoLabels[recurso] ?? recurso}
@@ -375,10 +492,25 @@ function PlanoCard({ plano, loading, onAssinar }: { plano: Plano; loading: boole
           ))}
         </ul>
       </CardContent>
-      <CardFooter>
-        <Button className="w-full" loading={loading} onClick={onAssinar}>
+
+      <CardFooter className="flex-col items-stretch gap-3">
+        <Button className="w-full" size="lg" loading={loading} onClick={onAssinar}>
           Assinar agora
         </Button>
+        <div className="flex items-center justify-center gap-3 text-[11px] text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <ShieldCheck className="h-3.5 w-3.5" /> Pagamento seguro
+          </span>
+          <span className="flex items-center gap-1">
+            <QrCode className="h-3.5 w-3.5" /> PIX
+          </span>
+          <span className="flex items-center gap-1">
+            <Barcode className="h-3.5 w-3.5" /> Boleto
+          </span>
+          <span className="flex items-center gap-1">
+            <CreditCard className="h-3.5 w-3.5" /> Cartão
+          </span>
+        </div>
       </CardFooter>
     </Card>
   )

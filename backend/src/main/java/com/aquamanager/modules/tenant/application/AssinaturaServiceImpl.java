@@ -109,15 +109,23 @@ public class AssinaturaServiceImpl implements AssinaturaService {
         switch (evento) {
             case "PAYMENT_CONFIRMED", "PAYMENT_RECEIVED" -> {
                 assinatura.setStatus(AssinaturaStatus.ATIVA);
+                assinatura.setProximoVencimento(LocalDate.now().plusMonths(1));
                 empresa.setStatus(EmpresaStatus.ATIVA);
             }
             case "PAYMENT_OVERDUE" -> {
                 assinatura.setStatus(AssinaturaStatus.INADIMPLENTE);
-                empresa.setStatus(EmpresaStatus.INADIMPLENTE);
+                // Uma assinatura PENDENTE que nunca chegou a ser paga (checkout abandonado)
+                // não pode derrubar uma empresa que ainda está em TRIAL — só demove empresas
+                // que já estavam com acesso pago ativo.
+                if (empresa.getStatus() == EmpresaStatus.ATIVA) {
+                    empresa.setStatus(EmpresaStatus.INADIMPLENTE);
+                }
             }
             case "SUBSCRIPTION_DELETED", "PAYMENT_DELETED" -> {
                 assinatura.setStatus(AssinaturaStatus.CANCELADA);
-                empresa.setStatus(EmpresaStatus.CANCELADA);
+                if (empresa.getStatus() == EmpresaStatus.ATIVA) {
+                    empresa.setStatus(EmpresaStatus.CANCELADA);
+                }
             }
             default -> log.info("Evento de webhook ignorado: {}", evento);
         }
@@ -138,14 +146,41 @@ public class AssinaturaServiceImpl implements AssinaturaService {
         String cancelUrl = frontendProperties.baseUrl() + "/configuracoes?checkout=cancel";
 
         try {
-            return paymentGateway.criarCheckoutSession(empresa, customerId, plano, successUrl, cancelUrl);
+            CheckoutSessionResult resultado = paymentGateway.criarCheckoutSession(empresa, customerId, plano, successUrl, cancelUrl);
+            if (resultado.customerId() != null) {
+                registrarAssinaturaPendente(empresaId, atual, plano, resultado);
+            }
+            // customerId nulo (Stripe): a assinatura só é criada quando o webhook
+            // checkout.session.completed confirmar — nada a persistir aqui ainda.
+            return resultado;
         } catch (UnsupportedOperationException ex) {
-            // Gateway sem checkout hospedado (Mock/Asaas): ativa a assinatura de forma
-            // síncrona, igual ao fluxo legado de alterarPlano, e "redireciona" direto ao
-            // successUrl — não há um cartão a capturar fora do backend.
+            // Gateway sem checkout hospedado nem fatura própria (Mock): ativa a assinatura
+            // de forma síncrona, igual ao fluxo legado de alterarPlano.
             alterarPlano(empresaId, plano.getCodigo().name());
-            return new CheckoutSessionResult("sync-" + UUID.randomUUID(), successUrl);
+            return new CheckoutSessionResult("sync-" + UUID.randomUUID(), successUrl, null);
         }
+    }
+
+    /**
+     * Asaas já cria a assinatura no gateway (com uma fatura em aberto) ao gerar o link de
+     * checkout — a assinatura fica PENDENTE no nosso banco até o webhook confirmar o
+     * pagamento; até lá a empresa não ganha acesso.
+     */
+    private void registrarAssinaturaPendente(UUID empresaId, Assinatura atual, Plano plano, CheckoutSessionResult resultado) {
+        if (atual != null && atual.getStatus() == AssinaturaStatus.PENDENTE && atual.getGatewaySubscriptionId() != null) {
+            // Checkout reaberto sem pagar o anterior: cancela a fatura anterior no gateway
+            // pra não acumular assinaturas/cobranças duplicadas.
+            paymentGateway.cancelarAssinatura(atual.getGatewaySubscriptionId());
+        }
+
+        Assinatura pendente = new Assinatura();
+        pendente.setEmpresaId(empresaId);
+        pendente.setPlano(plano);
+        pendente.setStatus(AssinaturaStatus.PENDENTE);
+        pendente.setGatewayCustomerId(resultado.customerId());
+        pendente.setGatewaySubscriptionId(resultado.sessionId());
+        pendente.setDataInicio(LocalDate.now());
+        assinaturaRepository.save(pendente);
     }
 
     @Override
