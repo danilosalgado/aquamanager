@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/select'
 import { vendaSchema, type VendaFormValues, categoriasSugeridas } from '../schemas/venda-schema'
 import { vendasApi, type Venda } from '../api/vendas-api'
-import { lotesApi } from '@/features/lotes/api/lotes-api'
+import { tanquesApi } from '@/features/tanques/api/tanques-api'
 import { clientesApi } from '@/features/clientes/api/clientes-api'
 import { extractErrorMessage } from '@/lib/api-client'
 
@@ -32,9 +32,9 @@ export function VendaFormDialog({
   const queryClient = useQueryClient()
   const isEditing = !!venda
 
-  const { data: lotes } = useQuery({
-    queryKey: ['lotes', 'select-vendas'],
-    queryFn: () => lotesApi.listar({ status: 'ATIVO', size: 100 }),
+  const { data: tanques } = useQuery({
+    queryKey: ['tanques', 'select-vendas'],
+    queryFn: () => tanquesApi.listar({ size: 100 }),
     enabled: open,
   })
 
@@ -64,7 +64,7 @@ export function VendaFormDialog({
       reset(
         venda
           ? {
-              loteId: venda.loteId,
+              tanqueId: venda.tanqueId,
               categoriaProduto: venda.categoriaProduto,
               quantidadeKg: venda.quantidadeKg,
               valorTotal: venda.valorTotal,
@@ -102,20 +102,22 @@ export function VendaFormDialog({
         <form onSubmit={handleSubmit((v) => mutation.mutate(v))} className="grid gap-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2 space-y-1.5">
-              <Label>Lote</Label>
-              <Select value={watch('loteId') ?? ''} onValueChange={(v) => setValue('loteId', v)}>
+              <Label>Tanque</Label>
+              <Select value={watch('tanqueId') ?? ''} onValueChange={(v) => setValue('tanqueId', v)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione o lote" />
+                  <SelectValue placeholder="Selecione o tanque" />
                 </SelectTrigger>
                 <SelectContent>
-                  {lotes?.content.map((lote) => (
-                    <SelectItem key={lote.id} value={lote.id}>
-                      {lote.especieNome} · {lote.tanqueNome}
-                    </SelectItem>
-                  ))}
+                  {tanques?.content
+                    .filter((tanque) => tanque.status === 'ATIVO')
+                    .map((tanque) => (
+                      <SelectItem key={tanque.id} value={tanque.id}>
+                        {tanque.nome}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
-              {errors.loteId && <p className="text-xs text-destructive">{errors.loteId.message}</p>}
+              {errors.tanqueId && <p className="text-xs text-destructive">{errors.tanqueId.message}</p>}
             </div>
 
             <div className="col-span-2 space-y-1.5">

@@ -4,6 +4,7 @@ import type { ApiResponse, PageResponse } from '@/types/api'
 export interface Venda {
   id: string
   loteId: string
+  tanqueId: string
   tanqueNome: string
   especieNome: string
   clienteId: string | null
@@ -16,7 +17,7 @@ export interface Venda {
 }
 
 export interface VendaPayload {
-  loteId: string
+  tanqueId: string
   categoriaProduto: string
   quantidadeKg: number
   valorTotal: number

@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export const vendaSchema = z.object({
-  loteId: z.string().uuid('Selecione o lote.'),
+  tanqueId: z.string().uuid('Selecione o tanque.'),
   categoriaProduto: z.string().min(1, 'Informe a categoria do produto.').max(80),
   quantidadeKg: z.coerce.number().positive('Informe uma quantidade válida.'),
   valorTotal: z.coerce.number().positive('Informe um valor válido.'),

@@ -7,6 +7,7 @@ import com.aquamanager.modules.financeiro.domain.StatusLancamento;
 import com.aquamanager.modules.financeiro.domain.TipoLancamento;
 import com.aquamanager.modules.financeiro.infrastructure.persistence.LancamentoFinanceiroRepository;
 import com.aquamanager.modules.lote.domain.Lote;
+import com.aquamanager.modules.lote.domain.StatusLote;
 import com.aquamanager.modules.lote.infrastructure.persistence.LoteRepository;
 import com.aquamanager.modules.tanque.domain.StatusTanque;
 import com.aquamanager.modules.tanque.domain.Tanque;
@@ -15,6 +16,7 @@ import com.aquamanager.modules.venda.application.dto.LucroBrutoPorTanqueResponse
 import com.aquamanager.modules.venda.application.dto.VendaRequest;
 import com.aquamanager.modules.venda.domain.Venda;
 import com.aquamanager.modules.venda.infrastructure.persistence.VendaRepository;
+import com.aquamanager.shared.domain.exception.BusinessException;
 import com.aquamanager.shared.domain.exception.ResourceNotFoundException;
 import java.math.BigDecimal;
 import java.text.Normalizer;
@@ -60,7 +62,7 @@ public class VendaServiceImpl implements VendaService {
     @Override
     @Transactional
     public Venda criar(UUID empresaId, VendaRequest request) {
-        Lote lote = buscarLote(empresaId, request.loteId());
+        Lote lote = buscarLoteAtivoDoTanque(empresaId, request.tanqueId());
         Cliente cliente = request.clienteId() != null ? buscarCliente(empresaId, request.clienteId()) : null;
 
         LancamentoFinanceiro lancamento = new LancamentoFinanceiro();
@@ -79,7 +81,7 @@ public class VendaServiceImpl implements VendaService {
     @Transactional
     public Venda atualizar(UUID empresaId, UUID id, VendaRequest request) {
         Venda venda = buscarDaEmpresa(empresaId, id);
-        Lote lote = buscarLote(empresaId, request.loteId());
+        Lote lote = buscarLoteAtivoDoTanque(empresaId, request.tanqueId());
         Cliente cliente = request.clienteId() != null ? buscarCliente(empresaId, request.clienteId()) : null;
 
         if (venda.getLancamentoFinanceiroId() != null) {
@@ -183,13 +185,17 @@ public class VendaServiceImpl implements VendaService {
         return venda;
     }
 
-    private Lote buscarLote(UUID empresaId, UUID loteId) {
-        Lote lote = loteRepository.findById(loteId)
-                .orElseThrow(() -> new ResourceNotFoundException("Lote", loteId));
-        if (!lote.getEmpresaId().equals(empresaId)) {
-            throw new ResourceNotFoundException("Lote", loteId);
+    /** A venda é lançada por tanque; resolve automaticamente o lote ativo daquele tanque. */
+    private Lote buscarLoteAtivoDoTanque(UUID empresaId, UUID tanqueId) {
+        Tanque tanque = tanqueRepository.findById(tanqueId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tanque", tanqueId));
+        if (!tanque.getEmpresaId().equals(empresaId)) {
+            throw new ResourceNotFoundException("Tanque", tanqueId);
         }
-        return lote;
+        return loteRepository.findByEmpresaIdAndTanqueIdAndStatus(empresaId, tanqueId, StatusLote.ATIVO, Pageable.unpaged())
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new BusinessException("Este tanque não tem nenhum lote ativo pra vincular a venda."));
     }
 
     private Cliente buscarCliente(UUID empresaId, UUID clienteId) {

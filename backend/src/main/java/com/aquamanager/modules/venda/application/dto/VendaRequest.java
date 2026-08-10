@@ -8,7 +8,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 public record VendaRequest(
-        @NotNull UUID loteId,
+        @NotNull UUID tanqueId,
         @NotBlank String categoriaProduto,
         @NotNull @Positive BigDecimal quantidadeKg,
         @NotNull @Positive BigDecimal valorTotal,
