@@ -20,7 +20,6 @@ const TanquesListPage = lazy(() => import('@/features/tanques/pages/TanquesListP
 const TanqueDetailPage = lazy(() => import('@/features/tanques/pages/TanqueDetailPage'))
 const LotesListPage = lazy(() => import('@/features/lotes/pages/LotesListPage'))
 const LoteDetailPage = lazy(() => import('@/features/lotes/pages/LoteDetailPage'))
-const SimuladorLucroPage = lazy(() => import('@/features/lotes/pages/SimuladorLucroPage'))
 const EspeciesListPage = lazy(() => import('@/features/especies/pages/EspeciesListPage'))
 const AlimentacaoListPage = lazy(() => import('@/features/alimentacao/pages/AlimentacaoListPage'))
 const QualidadeAguaListPage = lazy(() => import('@/features/qualidade-agua/pages/QualidadeAguaListPage'))
@@ -63,7 +62,6 @@ export function AppRoutes() {
             <Route path="/tanques/:id" element={<TanqueDetailPage />} />
             <Route path="/lotes" element={<LotesListPage />} />
             <Route path="/lotes/:id" element={<LoteDetailPage />} />
-            <Route path="/simulador" element={<SimuladorLucroPage />} />
             <Route path="/especies" element={<EspeciesListPage />} />
             <Route path="/alimentacao" element={<AlimentacaoListPage />} />
             <Route path="/qualidade-agua" element={<QualidadeAguaListPage />} />
