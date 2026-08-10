@@ -1,7 +1,7 @@
 package com.aquamanager.modules.venda.infrastructure.web;
 
 import com.aquamanager.modules.venda.application.VendaService;
-import com.aquamanager.modules.venda.application.dto.LucroBrutoPorTanqueResponse;
+import com.aquamanager.modules.venda.application.dto.ResumoLucroBrutoResponse;
 import com.aquamanager.modules.venda.application.dto.VendaRequest;
 import com.aquamanager.modules.venda.application.dto.VendaResponse;
 import com.aquamanager.modules.venda.infrastructure.mapper.VendaMapper;
@@ -34,10 +34,9 @@ public class VendaController {
 
     @GetMapping
     public ApiResponse<PageResponse<VendaResponse>> listar(
-            @RequestParam(required = false) UUID loteId,
             @RequestParam(required = false) String categoriaProduto,
             Pageable pageable) {
-        var page = vendaService.listar(SecurityUtils.currentEmpresaId(), loteId, categoriaProduto, pageable)
+        var page = vendaService.listar(SecurityUtils.currentEmpresaId(), categoriaProduto, pageable)
                 .map(vendaMapper::toResponse);
         return ApiResponse.of(PageResponse.from(page));
     }
@@ -73,8 +72,8 @@ public class VendaController {
         return ApiResponse.of(vendaService.listarCategorias(SecurityUtils.currentEmpresaId()));
     }
 
-    @GetMapping("/relatorio/lucro-bruto-por-tanque")
-    public ApiResponse<List<LucroBrutoPorTanqueResponse>> relatorioLucroBrutoPorTanque() {
-        return ApiResponse.of(vendaService.relatorioLucroBrutoPorTanque(SecurityUtils.currentEmpresaId()));
+    @GetMapping("/relatorio/lucro-bruto")
+    public ApiResponse<ResumoLucroBrutoResponse> resumoLucroBruto() {
+        return ApiResponse.of(vendaService.resumoLucroBruto(SecurityUtils.currentEmpresaId()));
     }
 }

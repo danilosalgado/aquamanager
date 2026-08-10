@@ -1,7 +1,6 @@
 package com.aquamanager.modules.venda.domain;
 
 import com.aquamanager.modules.cliente.domain.Cliente;
-import com.aquamanager.modules.lote.domain.Lote;
 import com.aquamanager.shared.domain.TenantAwareEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -22,10 +21,6 @@ import lombok.Setter;
 @Entity
 @Table(name = "vendas")
 public class Venda extends TenantAwareEntity {
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "lote_id", nullable = false)
-    private Lote lote;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cliente_id")

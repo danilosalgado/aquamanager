@@ -13,8 +13,6 @@ public interface VendaRepository extends JpaRepository<Venda, UUID> {
 
     Page<Venda> findByEmpresaId(UUID empresaId, Pageable pageable);
 
-    Page<Venda> findByEmpresaIdAndLoteId(UUID empresaId, UUID loteId, Pageable pageable);
-
     Page<Venda> findByEmpresaIdAndCategoriaProdutoIgnoreCase(UUID empresaId, String categoriaProduto, Pageable pageable);
 
     /** Usado pelo relatório de lucro bruto por tanque — agregação feita em memória. */

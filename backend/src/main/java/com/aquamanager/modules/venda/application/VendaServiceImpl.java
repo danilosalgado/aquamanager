@@ -6,24 +6,14 @@ import com.aquamanager.modules.financeiro.domain.LancamentoFinanceiro;
 import com.aquamanager.modules.financeiro.domain.StatusLancamento;
 import com.aquamanager.modules.financeiro.domain.TipoLancamento;
 import com.aquamanager.modules.financeiro.infrastructure.persistence.LancamentoFinanceiroRepository;
-import com.aquamanager.modules.lote.domain.Lote;
-import com.aquamanager.modules.lote.domain.StatusLote;
-import com.aquamanager.modules.lote.infrastructure.persistence.LoteRepository;
-import com.aquamanager.modules.tanque.domain.StatusTanque;
-import com.aquamanager.modules.tanque.domain.Tanque;
-import com.aquamanager.modules.tanque.infrastructure.persistence.TanqueRepository;
-import com.aquamanager.modules.venda.application.dto.LucroBrutoPorTanqueResponse;
+import com.aquamanager.modules.venda.application.dto.ResumoLucroBrutoResponse;
 import com.aquamanager.modules.venda.application.dto.VendaRequest;
 import com.aquamanager.modules.venda.domain.Venda;
 import com.aquamanager.modules.venda.infrastructure.persistence.VendaRepository;
-import com.aquamanager.shared.domain.exception.BusinessException;
 import com.aquamanager.shared.domain.exception.ResourceNotFoundException;
 import java.math.BigDecimal;
 import java.text.Normalizer;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -36,17 +26,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class VendaServiceImpl implements VendaService {
 
     private final VendaRepository vendaRepository;
-    private final LoteRepository loteRepository;
     private final ClienteRepository clienteRepository;
-    private final TanqueRepository tanqueRepository;
     private final LancamentoFinanceiroRepository lancamentoFinanceiroRepository;
 
     @Override
     @Transactional(readOnly = true)
-    public Page<Venda> listar(UUID empresaId, UUID loteId, String categoriaProduto, Pageable pageable) {
-        if (loteId != null) {
-            return vendaRepository.findByEmpresaIdAndLoteId(empresaId, loteId, pageable);
-        }
+    public Page<Venda> listar(UUID empresaId, String categoriaProduto, Pageable pageable) {
         if (categoriaProduto != null) {
             return vendaRepository.findByEmpresaIdAndCategoriaProdutoIgnoreCase(empresaId, categoriaProduto, pageable);
         }
@@ -62,18 +47,17 @@ public class VendaServiceImpl implements VendaService {
     @Override
     @Transactional
     public Venda criar(UUID empresaId, VendaRequest request) {
-        Lote lote = buscarLoteAtivoDoTanque(empresaId, request.tanqueId());
         Cliente cliente = request.clienteId() != null ? buscarCliente(empresaId, request.clienteId()) : null;
 
         LancamentoFinanceiro lancamento = new LancamentoFinanceiro();
         lancamento.setEmpresaId(empresaId);
-        preencherLancamento(lancamento, lote, cliente, request);
+        preencherLancamento(lancamento, cliente, request);
         lancamento = lancamentoFinanceiroRepository.save(lancamento);
 
         Venda venda = new Venda();
         venda.setEmpresaId(empresaId);
         venda.setLancamentoFinanceiroId(lancamento.getId());
-        aplicarCampos(venda, lote, cliente, request);
+        aplicarCampos(venda, cliente, request);
         return vendaRepository.save(venda);
     }
 
@@ -81,15 +65,14 @@ public class VendaServiceImpl implements VendaService {
     @Transactional
     public Venda atualizar(UUID empresaId, UUID id, VendaRequest request) {
         Venda venda = buscarDaEmpresa(empresaId, id);
-        Lote lote = buscarLoteAtivoDoTanque(empresaId, request.tanqueId());
         Cliente cliente = request.clienteId() != null ? buscarCliente(empresaId, request.clienteId()) : null;
 
         if (venda.getLancamentoFinanceiroId() != null) {
             lancamentoFinanceiroRepository.findById(venda.getLancamentoFinanceiroId())
-                    .ifPresent(lancamento -> preencherLancamento(lancamento, lote, cliente, request));
+                    .ifPresent(lancamento -> preencherLancamento(lancamento, cliente, request));
         }
 
-        aplicarCampos(venda, lote, cliente, request);
+        aplicarCampos(venda, cliente, request);
         return venda;
     }
 
@@ -115,50 +98,38 @@ public class VendaServiceImpl implements VendaService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<LucroBrutoPorTanqueResponse> relatorioLucroBrutoPorTanque(UUID empresaId) {
-        List<Tanque> tanques = tanqueRepository.findByEmpresaIdAndStatus(empresaId, StatusTanque.ATIVO);
+    public ResumoLucroBrutoResponse resumoLucroBruto(UUID empresaId) {
+        BigDecimal receita = vendaRepository.findByEmpresaId(empresaId).stream()
+                .map(Venda::getValorTotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        Map<UUID, BigDecimal> receitaPorTanque = new HashMap<>();
-        for (Venda venda : vendaRepository.findByEmpresaId(empresaId)) {
-            UUID tanqueId = venda.getLote().getTanque().getId();
-            receitaPorTanque.merge(tanqueId, venda.getValorTotal(), BigDecimal::add);
-        }
-
-        Map<UUID, BigDecimal> racaoPorTanque = new HashMap<>();
-        Map<UUID, BigDecimal> operacionalPorTanque = new HashMap<>();
+        BigDecimal custoRacao = BigDecimal.ZERO;
+        BigDecimal custoOperacional = BigDecimal.ZERO;
         for (LancamentoFinanceiro lancamento : lancamentoFinanceiroRepository
                 .findByEmpresaIdAndTipoAndLoteIsNotNull(empresaId, TipoLancamento.DESPESA)) {
-            UUID tanqueId = lancamento.getLote().getTanque().getId();
-            Map<UUID, BigDecimal> destino = ehCategoriaRacao(lancamento.getCategoria()) ? racaoPorTanque : operacionalPorTanque;
-            destino.merge(tanqueId, lancamento.getValor(), BigDecimal::add);
+            if (ehCategoriaRacao(lancamento.getCategoria())) {
+                custoRacao = custoRacao.add(lancamento.getValor());
+            } else {
+                custoOperacional = custoOperacional.add(lancamento.getValor());
+            }
         }
 
-        List<LucroBrutoPorTanqueResponse> resultado = new ArrayList<>();
-        for (Tanque tanque : tanques) {
-            BigDecimal receita = receitaPorTanque.getOrDefault(tanque.getId(), BigDecimal.ZERO);
-            BigDecimal custoRacao = racaoPorTanque.getOrDefault(tanque.getId(), BigDecimal.ZERO);
-            BigDecimal custoOperacional = operacionalPorTanque.getOrDefault(tanque.getId(), BigDecimal.ZERO);
-            BigDecimal lucroBruto = receita.subtract(custoRacao).subtract(custoOperacional);
-            resultado.add(new LucroBrutoPorTanqueResponse(
-                    tanque.getId(), tanque.getNome(), receita, custoRacao, custoOperacional, lucroBruto));
-        }
-        return resultado;
+        BigDecimal lucroBruto = receita.subtract(custoRacao).subtract(custoOperacional);
+        return new ResumoLucroBrutoResponse(receita, custoRacao, custoOperacional, lucroBruto);
     }
 
-    private void preencherLancamento(LancamentoFinanceiro lancamento, Lote lote, Cliente cliente, VendaRequest request) {
+    private void preencherLancamento(LancamentoFinanceiro lancamento, Cliente cliente, VendaRequest request) {
         lancamento.setTipo(TipoLancamento.RECEITA);
         lancamento.setCategoria(request.categoriaProduto());
-        lancamento.setDescricao("Venda de " + request.categoriaProduto() + " — " + lote.getTanque().getNome());
+        lancamento.setDescricao("Venda de " + request.categoriaProduto());
         lancamento.setValor(request.valorTotal());
         lancamento.setDataVencimento(request.dataVenda());
         lancamento.setDataPagamento(request.dataVenda());
         lancamento.setStatus(StatusLancamento.PAGO);
         lancamento.setCliente(cliente);
-        lancamento.setLote(lote);
     }
 
-    private void aplicarCampos(Venda venda, Lote lote, Cliente cliente, VendaRequest request) {
-        venda.setLote(lote);
+    private void aplicarCampos(Venda venda, Cliente cliente, VendaRequest request) {
         venda.setCliente(cliente);
         venda.setCategoriaProduto(request.categoriaProduto());
         venda.setQuantidadeKg(request.quantidadeKg());
@@ -167,7 +138,7 @@ public class VendaServiceImpl implements VendaService {
         venda.setObservacoes(request.observacoes());
     }
 
-    /** Normaliza acentos ("ração"/"racao") pra casar a categoria com o balde de custo de ração do relatório. */
+    /** Normaliza acentos ("ração"/"racao") pra casar a categoria com o balde de custo de ração do resumo. */
     private static boolean ehCategoriaRacao(String categoria) {
         if (categoria == null) return false;
         String normalizado = Normalizer.normalize(categoria, Normalizer.Form.NFD)
@@ -183,19 +154,6 @@ public class VendaServiceImpl implements VendaService {
             throw new ResourceNotFoundException("Venda", id);
         }
         return venda;
-    }
-
-    /** A venda é lançada por tanque; resolve automaticamente o lote ativo daquele tanque. */
-    private Lote buscarLoteAtivoDoTanque(UUID empresaId, UUID tanqueId) {
-        Tanque tanque = tanqueRepository.findById(tanqueId)
-                .orElseThrow(() -> new ResourceNotFoundException("Tanque", tanqueId));
-        if (!tanque.getEmpresaId().equals(empresaId)) {
-            throw new ResourceNotFoundException("Tanque", tanqueId);
-        }
-        return loteRepository.findByEmpresaIdAndTanqueIdAndStatus(empresaId, tanqueId, StatusLote.ATIVO, Pageable.unpaged())
-                .stream()
-                .findFirst()
-                .orElseThrow(() -> new BusinessException("Este tanque não tem nenhum lote ativo pra vincular a venda."));
     }
 
     private Cliente buscarCliente(UUID empresaId, UUID clienteId) {

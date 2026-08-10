@@ -1,6 +1,6 @@
 package com.aquamanager.modules.venda.application;
 
-import com.aquamanager.modules.venda.application.dto.LucroBrutoPorTanqueResponse;
+import com.aquamanager.modules.venda.application.dto.ResumoLucroBrutoResponse;
 import com.aquamanager.modules.venda.application.dto.VendaRequest;
 import com.aquamanager.modules.venda.domain.Venda;
 import java.util.List;
@@ -10,7 +10,7 @@ import org.springframework.data.domain.Pageable;
 
 public interface VendaService {
 
-    Page<Venda> listar(UUID empresaId, UUID loteId, String categoriaProduto, Pageable pageable);
+    Page<Venda> listar(UUID empresaId, String categoriaProduto, Pageable pageable);
 
     Venda buscar(UUID empresaId, UUID id);
 
@@ -22,5 +22,5 @@ public interface VendaService {
 
     List<String> listarCategorias(UUID empresaId);
 
-    List<LucroBrutoPorTanqueResponse> relatorioLucroBrutoPorTanque(UUID empresaId);
+    ResumoLucroBrutoResponse resumoLucroBruto(UUID empresaId);
 }

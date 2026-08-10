@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Plus, ShoppingCart, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
+import {
+  Plus, ShoppingCart, MoreHorizontal, Pencil, Trash2, DollarSign, Wheat, Wrench, TrendingUp,
+} from 'lucide-react'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
+import { StatCard } from '@/components/shared/StatCard'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -48,9 +50,9 @@ export default function VendasListPage() {
     enabled: !!categoriaAtiva,
   })
 
-  const { data: relatorio, isLoading: carregandoRelatorio } = useQuery({
-    queryKey: ['vendas', 'relatorio'],
-    queryFn: () => vendasApi.relatorioLucroBrutoPorTanque(),
+  const { data: resumo, isLoading: carregandoResumo } = useQuery({
+    queryKey: ['vendas', 'resumo'],
+    queryFn: () => vendasApi.resumoLucroBruto(),
   })
 
   const deleteMutation = useMutation({
@@ -67,16 +69,6 @@ export default function VendasListPage() {
 
   const totalQuantidade = vendas?.content.reduce((acc, v) => acc + v.quantidadeKg, 0) ?? 0
   const totalValor = vendas?.content.reduce((acc, v) => acc + v.valorTotal, 0) ?? 0
-
-  const totaisRelatorio = (relatorio ?? []).reduce(
-    (acc, r) => ({
-      receita: acc.receita + r.receita,
-      custoRacao: acc.custoRacao + r.custoRacao,
-      custoOperacional: acc.custoOperacional + r.custoOperacional,
-      lucroBruto: acc.lucroBruto + r.lucroBruto,
-    }),
-    { receita: 0, custoRacao: 0, custoOperacional: 0, lucroBruto: 0 },
-  )
 
   return (
     <div>
@@ -110,7 +102,7 @@ export default function VendasListPage() {
         <EmptyState
           icon={ShoppingCart}
           title="Nenhuma venda registrada"
-          description="Lance sua primeira venda pra começar a acompanhar o lucro bruto por tanque."
+          description="Lance sua primeira venda pra começar a acompanhar o lucro bruto."
           action={
             podeGerenciar && (
               <Button onClick={() => { setEditing(null); setFormOpen(true) }}>
@@ -144,7 +136,6 @@ export default function VendasListPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Data</TableHead>
-                <TableHead>Lote</TableHead>
                 <TableHead>Cliente</TableHead>
                 <TableHead className="text-right">Quantidade (kg)</TableHead>
                 <TableHead className="text-right">Valor total (R$)</TableHead>
@@ -155,9 +146,6 @@ export default function VendasListPage() {
               {vendas.content.map((venda) => (
                 <TableRow key={venda.id}>
                   <TableCell>{formatDate(venda.dataVenda)}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {venda.especieNome} · {venda.tanqueNome}
-                  </TableCell>
                   <TableCell className="text-muted-foreground">{venda.clienteNome ?? '—'}</TableCell>
                   <TableCell className="text-right">{formatNumber(venda.quantidadeKg, 1)} kg</TableCell>
                   <TableCell className="text-right font-medium">{formatCurrency(venda.valorTotal)}</TableCell>
@@ -186,7 +174,7 @@ export default function VendasListPage() {
                 </TableRow>
               ))}
               <TableRow className="bg-muted/30 font-semibold">
-                <TableCell colSpan={3}>Total</TableCell>
+                <TableCell colSpan={2}>Total</TableCell>
                 <TableCell className="text-right">{formatNumber(totalQuantidade, 1)} kg</TableCell>
                 <TableCell className="text-right">{formatCurrency(totalValor)}</TableCell>
                 {podeGerenciar && <TableCell />}
@@ -196,56 +184,36 @@ export default function VendasListPage() {
         </div>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Relatório · Lucro bruto por tanque</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {carregandoRelatorio ? (
-            <div className="space-y-2 p-6">
-              {Array.from({ length: 2 }).map((_, i) => (
-                <Skeleton key={i} className="h-10 w-full" />
-              ))}
-            </div>
-          ) : !relatorio?.length ? (
-            <p className="p-6 text-sm text-muted-foreground">Nenhum tanque ativo para calcular o relatório.</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Tanque</TableHead>
-                  <TableHead className="text-right">Receita (R$)</TableHead>
-                  <TableHead className="text-right">Custo ração (R$)</TableHead>
-                  <TableHead className="text-right">Custo operacional (R$)</TableHead>
-                  <TableHead className="text-right">Lucro bruto (R$)</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {relatorio.map((r) => (
-                  <TableRow key={r.tanqueId}>
-                    <TableCell className="font-medium">{r.tanqueNome}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(r.receita)}</TableCell>
-                    <TableCell className="text-right text-muted-foreground">{formatCurrency(r.custoRacao)}</TableCell>
-                    <TableCell className="text-right text-muted-foreground">{formatCurrency(r.custoOperacional)}</TableCell>
-                    <TableCell className={`text-right font-semibold ${r.lucroBruto >= 0 ? 'text-success' : 'text-destructive'}`}>
-                      {formatCurrency(r.lucroBruto)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-                <TableRow className="bg-muted/30 font-semibold">
-                  <TableCell>Total</TableCell>
-                  <TableCell className="text-right">{formatCurrency(totaisRelatorio.receita)}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(totaisRelatorio.custoRacao)}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(totaisRelatorio.custoOperacional)}</TableCell>
-                  <TableCell className={`text-right ${totaisRelatorio.lucroBruto >= 0 ? 'text-success' : 'text-destructive'}`}>
-                    {formatCurrency(totaisRelatorio.lucroBruto)}
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+      <div>
+        <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Resumo · Lucro bruto</h2>
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <StatCard
+            label="Receita"
+            value={formatCurrency(resumo?.receita ?? 0)}
+            icon={DollarSign}
+            loading={carregandoResumo}
+          />
+          <StatCard
+            label="Custo ração"
+            value={formatCurrency(resumo?.custoRacao ?? 0)}
+            icon={Wheat}
+            loading={carregandoResumo}
+          />
+          <StatCard
+            label="Custo operacional"
+            value={formatCurrency(resumo?.custoOperacional ?? 0)}
+            icon={Wrench}
+            loading={carregandoResumo}
+          />
+          <StatCard
+            label="Lucro bruto"
+            value={formatCurrency(resumo?.lucroBruto ?? 0)}
+            icon={TrendingUp}
+            tone={(resumo?.lucroBruto ?? 0) >= 0 ? 'success' : 'destructive'}
+            loading={carregandoResumo}
+          />
+        </div>
+      </div>
 
       <VendaFormDialog
         open={formOpen}

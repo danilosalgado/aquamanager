@@ -3,10 +3,6 @@ import type { ApiResponse, PageResponse } from '@/types/api'
 
 export interface Venda {
   id: string
-  loteId: string
-  tanqueId: string
-  tanqueNome: string
-  especieNome: string
   clienteId: string | null
   clienteNome: string | null
   categoriaProduto: string
@@ -17,7 +13,6 @@ export interface Venda {
 }
 
 export interface VendaPayload {
-  tanqueId: string
   categoriaProduto: string
   quantidadeKg: number
   valorTotal: number
@@ -26,9 +21,7 @@ export interface VendaPayload {
   observacoes?: string | null
 }
 
-export interface LucroBrutoPorTanque {
-  tanqueId: string
-  tanqueNome: string
+export interface ResumoLucroBruto {
   receita: number
   custoRacao: number
   custoOperacional: number
@@ -36,7 +29,7 @@ export interface LucroBrutoPorTanque {
 }
 
 export const vendasApi = {
-  listar: (params: { loteId?: string; categoriaProduto?: string; page?: number; size?: number }) =>
+  listar: (params: { categoriaProduto?: string; page?: number; size?: number }) =>
     apiClient.get<ApiResponse<PageResponse<Venda>>>('/vendas', { params }).then((r) => r.data.data),
 
   buscar: (id: string) => apiClient.get<ApiResponse<Venda>>(`/vendas/${id}`).then((r) => r.data.data),
@@ -50,6 +43,6 @@ export const vendasApi = {
 
   categorias: () => apiClient.get<ApiResponse<string[]>>('/vendas/categorias').then((r) => r.data.data),
 
-  relatorioLucroBrutoPorTanque: () =>
-    apiClient.get<ApiResponse<LucroBrutoPorTanque[]>>('/vendas/relatorio/lucro-bruto-por-tanque').then((r) => r.data.data),
+  resumoLucroBruto: () =>
+    apiClient.get<ApiResponse<ResumoLucroBruto>>('/vendas/relatorio/lucro-bruto').then((r) => r.data.data),
 }

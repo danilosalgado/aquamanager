@@ -10,10 +10,6 @@ public class VendaMapper {
     public VendaResponse toResponse(Venda v) {
         return new VendaResponse(
                 v.getId(),
-                v.getLote().getId(),
-                v.getLote().getTanque().getId(),
-                v.getLote().getTanque().getNome(),
-                v.getLote().getEspecie().getNome(),
                 v.getCliente() != null ? v.getCliente().getId() : null,
                 v.getCliente() != null ? v.getCliente().getNome() : null,
                 v.getCategoriaProduto(),

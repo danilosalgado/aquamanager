@@ -6,10 +6,6 @@ import java.util.UUID;
 
 public record VendaResponse(
         UUID id,
-        UUID loteId,
-        UUID tanqueId,
-        String tanqueNome,
-        String especieNome,
         UUID clienteId,
         String clienteNome,
         String categoriaProduto,

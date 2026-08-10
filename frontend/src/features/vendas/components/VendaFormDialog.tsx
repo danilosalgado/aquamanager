@@ -14,7 +14,6 @@ import {
 } from '@/components/ui/select'
 import { vendaSchema, type VendaFormValues, categoriasSugeridas } from '../schemas/venda-schema'
 import { vendasApi, type Venda } from '../api/vendas-api'
-import { tanquesApi } from '@/features/tanques/api/tanques-api'
 import { clientesApi } from '@/features/clientes/api/clientes-api'
 import { extractErrorMessage } from '@/lib/api-client'
 
@@ -31,12 +30,6 @@ export function VendaFormDialog({
 }) {
   const queryClient = useQueryClient()
   const isEditing = !!venda
-
-  const { data: tanques } = useQuery({
-    queryKey: ['tanques', 'select-vendas'],
-    queryFn: () => tanquesApi.listar({ size: 100 }),
-    enabled: open,
-  })
 
   const { data: clientes } = useQuery({
     queryKey: ['clientes', 'select'],
@@ -64,7 +57,6 @@ export function VendaFormDialog({
       reset(
         venda
           ? {
-              tanqueId: venda.tanqueId,
               categoriaProduto: venda.categoriaProduto,
               quantidadeKg: venda.quantidadeKg,
               valorTotal: venda.valorTotal,
@@ -101,25 +93,6 @@ export function VendaFormDialog({
 
         <form onSubmit={handleSubmit((v) => mutation.mutate(v))} className="grid gap-4">
           <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2 space-y-1.5">
-              <Label>Tanque</Label>
-              <Select value={watch('tanqueId') ?? ''} onValueChange={(v) => setValue('tanqueId', v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o tanque" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tanques?.content
-                    .filter((tanque) => tanque.status === 'ATIVO')
-                    .map((tanque) => (
-                      <SelectItem key={tanque.id} value={tanque.id}>
-                        {tanque.nome}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-              {errors.tanqueId && <p className="text-xs text-destructive">{errors.tanqueId.message}</p>}
-            </div>
-
             <div className="col-span-2 space-y-1.5">
               <Label htmlFor="categoriaProduto">Categoria do produto</Label>
               <Input
