@@ -18,9 +18,23 @@ export function formatNumber(value: number | null | undefined, fractionDigits = 
   }).format(value)
 }
 
+/**
+ * "yyyy-MM-dd" (LocalDate do backend, sem hora/fuso) precisa ser interpretado como
+ * data local — new Date("yyyy-MM-dd") cria meia-noite UTC, que em fusos negativos
+ * (ex.: Brasil, UTC-3) cai no dia anterior ao formatar no horário local.
+ */
+function parseDateOnly(value: string): Date {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+  if (match) {
+    const [, y, m, d] = match
+    return new Date(Number(y), Number(m) - 1, Number(d))
+  }
+  return new Date(value)
+}
+
 export function formatDate(value: string | Date | null | undefined): string {
   if (!value) return '—'
-  const date = typeof value === 'string' ? new Date(value) : value
+  const date = typeof value === 'string' ? parseDateOnly(value) : value
   return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short' }).format(date)
 }
 

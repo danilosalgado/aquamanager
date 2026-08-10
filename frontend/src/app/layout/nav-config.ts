@@ -1,6 +1,7 @@
 import {
   LayoutDashboard, Waves, Layers, Fish, Utensils, Droplets, TrendingUp,
   Skull, Boxes, Wallet, Users, Truck, UserCog, Bell, Building2, Calendar, FileText, Target,
+  ShoppingCart,
 } from 'lucide-react'
 import type { Role } from '@/types/auth'
 
@@ -45,6 +46,7 @@ export const navGroups: NavGroup[] = [
     title: 'Gestão',
     items: [
       { label: 'Estoque', to: '/estoque', icon: Boxes },
+      { label: 'Vendas', to: '/vendas', icon: ShoppingCart, roles: ['ADMINISTRADOR', 'GERENTE', 'CONSULTOR'] },
       { label: 'Financeiro', to: '/financeiro', icon: Wallet, roles: ['ADMINISTRADOR', 'GERENTE', 'CONSULTOR'] },
       { label: 'Clientes', to: '/clientes', icon: Users },
       { label: 'Fornecedores', to: '/fornecedores', icon: Truck },

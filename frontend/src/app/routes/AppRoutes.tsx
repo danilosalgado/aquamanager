@@ -28,6 +28,7 @@ const CrescimentoListPage = lazy(() => import('@/features/crescimento/pages/Cres
 const MortalidadeListPage = lazy(() => import('@/features/mortalidade/pages/MortalidadeListPage'))
 const EstoqueListPage = lazy(() => import('@/features/estoque/pages/EstoqueListPage'))
 const FinanceiroListPage = lazy(() => import('@/features/financeiro/pages/FinanceiroListPage'))
+const VendasListPage = lazy(() => import('@/features/vendas/pages/VendasListPage'))
 const ClientesListPage = lazy(() => import('@/features/clientes/pages/ClientesListPage'))
 const FornecedoresListPage = lazy(() => import('@/features/fornecedores/pages/FornecedoresListPage'))
 const UsuariosListPage = lazy(() => import('@/features/usuarios/pages/UsuariosListPage'))
@@ -76,6 +77,7 @@ export function AppRoutes() {
 
             <Route element={<RoleGuard roles={['ADMINISTRADOR', 'GERENTE', 'CONSULTOR']} />}>
               <Route path="/financeiro" element={<FinanceiroListPage />} />
+              <Route path="/vendas" element={<VendasListPage />} />
             </Route>
             <Route element={<RoleGuard roles={['ADMINISTRADOR', 'GERENTE']} />}>
               <Route path="/usuarios" element={<UsuariosListPage />} />

@@ -24,6 +24,9 @@ public interface LancamentoFinanceiroRepository extends JpaRepository<Lancamento
 
     List<LancamentoFinanceiro> findByEmpresaIdAndDataVencimentoBetween(UUID empresaId, LocalDate inicio, LocalDate fim);
 
+    /** Usado pelo relatório de lucro bruto por tanque (agrupamento feito em memória). */
+    List<LancamentoFinanceiro> findByEmpresaIdAndTipoAndLoteIsNotNull(UUID empresaId, TipoLancamento tipo);
+
     @Query("SELECT COALESCE(SUM(l.valor), 0) FROM LancamentoFinanceiro l "
             + "WHERE l.empresaId = :empresaId AND l.tipo = :tipo AND l.status = 'PAGO' "
             + "AND l.dataPagamento BETWEEN :inicio AND :fim")
