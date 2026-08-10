@@ -10,6 +10,7 @@ import com.aquamanager.shared.infrastructure.security.SecurityUtils;
 import com.aquamanager.shared.infrastructure.web.ApiResponse;
 import com.aquamanager.shared.infrastructure.web.PageResponse;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -72,5 +73,10 @@ public class LoteController {
     @GetMapping("/{id}/crescimento-potencial")
     public ApiResponse<CrescimentoPotencialResponse> crescimentoPotencial(@PathVariable UUID id) {
         return ApiResponse.of(crescimentoPotencialService.calcular(SecurityUtils.currentEmpresaId(), id));
+    }
+
+    @GetMapping("/crescimento-potencial")
+    public ApiResponse<List<CrescimentoPotencialResponse>> crescimentoPotencialTodosAtivos() {
+        return ApiResponse.of(crescimentoPotencialService.calcularTodosAtivos(SecurityUtils.currentEmpresaId()));
     }
 }

@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Waves, Layers, Fish, Utensils, Droplets, TrendingUp,
-  Skull, Boxes, Wallet, Users, Truck, UserCog, Bell, Building2, Calendar, FileText,
+  Skull, Boxes, Wallet, Users, Truck, UserCog, Bell, Building2, Calendar, FileText, Target,
 } from 'lucide-react'
 import type { Role } from '@/types/auth'
 
@@ -33,6 +33,7 @@ export const navGroups: NavGroup[] = [
     items: [
       { label: 'Tanques', to: '/tanques', icon: Waves },
       { label: 'Lotes', to: '/lotes', icon: Layers },
+      { label: 'Crescimento Potencial', to: '/crescimento-potencial', icon: Target },
       { label: 'Espécies', to: '/especies', icon: Fish },
       { label: 'Alimentação', to: '/alimentacao', icon: Utensils },
       { label: 'Qualidade da água', to: '/qualidade-agua', icon: Droplets },

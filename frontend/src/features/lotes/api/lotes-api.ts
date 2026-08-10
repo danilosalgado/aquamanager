@@ -29,6 +29,7 @@ export interface ProjecaoPeso {
 
 export interface CrescimentoPotencial {
   loteId: string
+  tanqueNome: string
   especieNome: string
   pesoAtualG: number
   taxaCrescimentoGDia: number | null
@@ -64,4 +65,7 @@ export const lotesApi = {
 
   crescimentoPotencial: (id: string) =>
     apiClient.get<ApiResponse<CrescimentoPotencial>>(`/lotes/${id}/crescimento-potencial`).then((r) => r.data.data),
+
+  crescimentoPotencialTodosAtivos: () =>
+    apiClient.get<ApiResponse<CrescimentoPotencial[]>>('/lotes/crescimento-potencial').then((r) => r.data.data),
 }

@@ -6,6 +6,8 @@ import com.aquamanager.modules.crescimento.domain.RegistroCrescimento;
 import com.aquamanager.modules.crescimento.infrastructure.persistence.RegistroCrescimentoRepository;
 import com.aquamanager.modules.lote.application.LoteService;
 import com.aquamanager.modules.lote.domain.Lote;
+import com.aquamanager.modules.lote.domain.StatusLote;
+import com.aquamanager.modules.lote.infrastructure.persistence.LoteRepository;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
@@ -17,6 +19,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,13 +38,26 @@ public class CrescimentoPotencialServiceImpl implements CrescimentoPotencialServ
     };
 
     private final LoteService loteService;
+    private final LoteRepository loteRepository;
     private final RegistroCrescimentoRepository registroCrescimentoRepository;
 
     @Override
     @Transactional(readOnly = true)
     public CrescimentoPotencialResponse calcular(UUID empresaId, UUID loteId) {
         Lote lote = loteService.buscar(empresaId, loteId);
-        List<RegistroCrescimento> historico = registroCrescimentoRepository.findByLoteIdOrderByDataPesagemAsc(loteId);
+        return calcularParaLote(lote);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CrescimentoPotencialResponse> calcularTodosAtivos(UUID empresaId) {
+        return loteRepository.findByEmpresaIdAndStatus(empresaId, StatusLote.ATIVO, Pageable.unpaged()).stream()
+                .map(this::calcularParaLote)
+                .toList();
+    }
+
+    private CrescimentoPotencialResponse calcularParaLote(Lote lote) {
+        List<RegistroCrescimento> historico = registroCrescimentoRepository.findByLoteIdOrderByDataPesagemAsc(lote.getId());
 
         TaxaCrescimento taxa = calcularTaxa(lote, historico);
 
@@ -65,6 +81,7 @@ public class CrescimentoPotencialServiceImpl implements CrescimentoPotencialServ
 
         return new CrescimentoPotencialResponse(
                 lote.getId(),
+                lote.getTanque().getNome(),
                 lote.getEspecie().getNome(),
                 lote.getPesoAtualG(),
                 taxa.gramasPorDia(),

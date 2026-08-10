@@ -7,6 +7,7 @@ import java.util.UUID;
 
 public record CrescimentoPotencialResponse(
         UUID loteId,
+        String tanqueNome,
         String especieNome,
         BigDecimal pesoAtualG,
         BigDecimal taxaCrescimentoGDia,
