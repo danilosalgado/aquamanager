@@ -19,6 +19,24 @@ export interface Lote {
   biomassaAtualKg: number
 }
 
+export interface ProjecaoPeso {
+  rotulo: string
+  pesoAlvoG: number
+  jaAtingido: boolean
+  diasRestantes: number | null
+  dataPrevista: string | null
+}
+
+export interface CrescimentoPotencial {
+  loteId: string
+  especieNome: string
+  pesoAtualG: number
+  taxaCrescimentoGDia: number | null
+  confiabilidade: 'ALTA' | 'MEDIA' | 'BAIXA'
+  pesagensConsideradas: number
+  projecoes: ProjecaoPeso[]
+}
+
 export interface LotePayload {
   tanqueId: string
   especieId: string
@@ -43,4 +61,7 @@ export const lotesApi = {
     apiClient.put<ApiResponse<Lote>>(`/lotes/${id}`, payload).then((r) => r.data.data),
 
   remover: (id: string) => apiClient.delete(`/lotes/${id}`),
+
+  crescimentoPotencial: (id: string) =>
+    apiClient.get<ApiResponse<CrescimentoPotencial>>(`/lotes/${id}/crescimento-potencial`).then((r) => r.data.data),
 }

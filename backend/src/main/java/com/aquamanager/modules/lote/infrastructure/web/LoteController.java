@@ -1,5 +1,7 @@
 package com.aquamanager.modules.lote.infrastructure.web;
 
+import com.aquamanager.modules.crescimento.application.CrescimentoPotencialService;
+import com.aquamanager.modules.crescimento.application.dto.CrescimentoPotencialResponse;
 import com.aquamanager.modules.lote.application.LoteService;
 import com.aquamanager.modules.lote.application.dto.LoteRequest;
 import com.aquamanager.modules.lote.application.dto.LoteResponse;
@@ -29,6 +31,7 @@ public class LoteController {
 
     private final LoteService loteService;
     private final LoteMapper loteMapper;
+    private final CrescimentoPotencialService crescimentoPotencialService;
 
     @GetMapping
     public ApiResponse<PageResponse<LoteResponse>> listar(
@@ -64,5 +67,10 @@ public class LoteController {
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE')")
     public void remover(@PathVariable UUID id) {
         loteService.remover(SecurityUtils.currentEmpresaId(), id);
+    }
+
+    @GetMapping("/{id}/crescimento-potencial")
+    public ApiResponse<CrescimentoPotencialResponse> crescimentoPotencial(@PathVariable UUID id) {
+        return ApiResponse.of(crescimentoPotencialService.calcular(SecurityUtils.currentEmpresaId(), id));
     }
 }

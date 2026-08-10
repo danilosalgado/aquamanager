@@ -1,7 +1,8 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Plus, Layers, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Layers, MoreHorizontal, Pencil, Trash2, TrendingUp } from 'lucide-react'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
@@ -130,7 +131,11 @@ export default function LotesListPage() {
             <TableBody>
               {data.content.map((lote) => (
                 <TableRow key={lote.id}>
-                  <TableCell className="font-medium">{lote.tanqueNome}</TableCell>
+                  <TableCell className="font-medium">
+                    <Link to={`/lotes/${lote.id}`} className="hover:text-primary hover:underline">
+                      {lote.tanqueNome}
+                    </Link>
+                  </TableCell>
                   <TableCell className="text-muted-foreground">{lote.especieNome}</TableCell>
                   <TableCell>{formatNumber(lote.quantidadeAtual)}</TableCell>
                   <TableCell>{formatNumber(lote.pesoAtualG, 1)}</TableCell>
@@ -139,26 +144,33 @@ export default function LotesListPage() {
                     <Badge variant={statusVariant(lote.status)}>{statusLoteLabels[lote.status]}</Badge>
                   </TableCell>
                   <TableCell>
-                    {podeGerenciar && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => { setEditing(lote); setFormOpen(true) }}>
-                            <Pencil className="mr-2 h-4 w-4" /> Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => setRemoving(lote)}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" /> Remover
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                          <Link to={`/lotes/${lote.id}`}>
+                            <TrendingUp className="mr-2 h-4 w-4" /> Crescimento potencial
+                          </Link>
+                        </DropdownMenuItem>
+                        {podeGerenciar && (
+                          <>
+                            <DropdownMenuItem onClick={() => { setEditing(lote); setFormOpen(true) }}>
+                              <Pencil className="mr-2 h-4 w-4" /> Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={() => setRemoving(lote)}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" /> Remover
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}

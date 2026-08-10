@@ -18,4 +18,7 @@ public interface RegistroCrescimentoRepository extends JpaRepository<RegistroCre
 
     /** Usado pelo índice de saúde para comparar a última pesagem com a anterior. */
     List<RegistroCrescimento> findTop2ByLoteIdOrderByDataPesagemDesc(UUID loteId);
+
+    /** Usado pela projeção de crescimento potencial (regressão sobre o histórico completo). */
+    List<RegistroCrescimento> findByLoteIdOrderByDataPesagemAsc(UUID loteId);
 }
