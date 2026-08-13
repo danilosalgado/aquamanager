@@ -56,6 +56,7 @@ export function CrescimentoFormDialog({
     register,
     handleSubmit,
     reset,
+    resetField,
     setValue,
     watch,
     formState: { errors, isSubmitting },
@@ -95,7 +96,8 @@ export function CrescimentoFormDialog({
     if (tipo === tipoAmostra) return
     setTipoAmostra(tipo)
     if (tipo === 'TOTAL') {
-      reset((atual) => ({ ...atual, pesoMedioG: undefined, quantidadeAmostra: undefined }))
+      resetField('pesoMedioG', { defaultValue: undefined })
+      resetField('quantidadeAmostra', { defaultValue: undefined })
     } else {
       setPesosIndividuais([''])
     }
