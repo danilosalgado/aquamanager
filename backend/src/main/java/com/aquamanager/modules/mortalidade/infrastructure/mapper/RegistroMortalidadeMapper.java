@@ -13,7 +13,7 @@ public class RegistroMortalidadeMapper {
                 registro.getLote().getId(),
                 registro.getQuantidade(),
                 registro.getData(),
-                registro.getMotivo(),
+                registro.getCausa(),
                 registro.getObservacoes()
         );
     }

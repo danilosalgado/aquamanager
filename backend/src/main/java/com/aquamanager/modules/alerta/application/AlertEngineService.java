@@ -15,6 +15,7 @@ import com.aquamanager.modules.financeiro.infrastructure.persistence.LancamentoF
 import com.aquamanager.modules.lote.domain.Lote;
 import com.aquamanager.modules.lote.domain.StatusLote;
 import com.aquamanager.modules.lote.infrastructure.persistence.LoteRepository;
+import com.aquamanager.modules.mortalidade.domain.CausaExclusao;
 import com.aquamanager.modules.mortalidade.domain.RegistroMortalidade;
 import com.aquamanager.modules.mortalidade.infrastructure.persistence.RegistroMortalidadeRepository;
 import com.aquamanager.modules.qualidadeagua.domain.RegistroQualidadeAgua;
@@ -131,7 +132,9 @@ public class AlertEngineService {
         for (Lote lote : loteRepository.findByEmpresaIdAndStatus(empresaId, StatusLote.ATIVO, Pageable.unpaged())) {
             List<RegistroMortalidade> recentes = mortalidadeRepository
                     .findByLoteIdAndDataGreaterThanEqual(lote.getId(), LocalDate.now().minusDays(7));
-            int totalMorto = recentes.stream().mapToInt(RegistroMortalidade::getQuantidade).sum();
+            int totalMorto = recentes.stream()
+                    .filter(r -> r.getCausa() == CausaExclusao.MORTE)
+                    .mapToInt(RegistroMortalidade::getQuantidade).sum();
             if (totalMorto == 0 || lote.getQuantidadeAtual() == 0) {
                 continue;
             }

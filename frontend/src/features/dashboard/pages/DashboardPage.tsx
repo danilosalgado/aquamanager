@@ -145,7 +145,7 @@ export default function DashboardPage() {
           loading={isLoading}
         />
         <StatCard
-          label="Mortalidade (30 dias)"
+          label="Exclusão (30 dias)"
           value={formatNumber(resumo?.mortalidade30Dias)}
           icon={Skull}
           loading={isLoading}
@@ -193,7 +193,7 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Crescimento: Peso Médio (30 dias)</CardTitle>
+            <CardTitle>Biometria: Peso Médio (30 dias)</CardTitle>
           </CardHeader>
           <CardContent>
             <ChartContainer config={crescimentoConfig} className="h-72 w-full">
@@ -230,7 +230,7 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Mortalidade Diária (30 dias)</CardTitle>
+            <CardTitle>Exclusão Diária (30 dias)</CardTitle>
           </CardHeader>
           <CardContent>
             <ChartContainer config={mortalidadeConfig} className="h-72 w-full">

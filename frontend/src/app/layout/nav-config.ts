@@ -38,8 +38,8 @@ export const navGroups: NavGroup[] = [
       { label: 'Espécies', to: '/especies', icon: Fish },
       { label: 'Alimentação', to: '/alimentacao', icon: Utensils },
       { label: 'Qualidade da água', to: '/qualidade-agua', icon: Droplets },
-      { label: 'Crescimento', to: '/crescimento', icon: TrendingUp },
-      { label: 'Mortalidade', to: '/mortalidade', icon: Skull },
+      { label: 'Biometria', to: '/crescimento', icon: TrendingUp },
+      { label: 'Exclusão', to: '/mortalidade', icon: Skull },
     ],
   },
   {

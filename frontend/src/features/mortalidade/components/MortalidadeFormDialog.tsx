@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { mortalidadeSchema, type MortalidadeFormValues } from '../schemas/mortalidade-schema'
-import { mortalidadeApi, type RegistroMortalidade } from '../api/mortalidade-api'
+import { mortalidadeApi, CAUSA_EXCLUSAO_LABELS, type RegistroMortalidade } from '../api/mortalidade-api'
 import { lotesApi } from '@/features/lotes/api/lotes-api'
 import { extractErrorMessage } from '@/lib/api-client'
 
@@ -55,7 +55,7 @@ export function MortalidadeFormDialog({
               loteId: registro.loteId,
               quantidade: registro.quantidade,
               data: registro.data,
-              motivo: registro.motivo,
+              causa: registro.causa,
               observacoes: registro.observacoes ?? undefined,
             }
           : undefined,
@@ -78,7 +78,7 @@ export function MortalidadeFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEditing ? 'Editar registro de mortalidade' : 'Novo registro de mortalidade'}</DialogTitle>
+          <DialogTitle>{isEditing ? 'Editar registro de exclusão' : 'Novo registro de exclusão'}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit((v) => mutation.mutate(v))} className="grid gap-4">
@@ -113,9 +113,20 @@ export function MortalidadeFormDialog({
             </div>
 
             <div className="col-span-2 space-y-1.5">
-              <Label htmlFor="motivo">Motivo</Label>
-              <Input id="motivo" {...register('motivo')} />
-              {errors.motivo && <p className="text-xs text-destructive">{errors.motivo.message}</p>}
+              <Label>Causa</Label>
+              <Select value={watch('causa')} onValueChange={(v) => setValue('causa', v as MortalidadeFormValues['causa'])}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a causa" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(CAUSA_EXCLUSAO_LABELS).map(([valor, label]) => (
+                    <SelectItem key={valor} value={valor}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.causa && <p className="text-xs text-destructive">{errors.causa.message}</p>}
             </div>
 
             <div className="col-span-2 space-y-1.5">

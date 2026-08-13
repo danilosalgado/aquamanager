@@ -4,6 +4,7 @@ import com.aquamanager.modules.lote.domain.Lote;
 import com.aquamanager.modules.lote.domain.StatusLote;
 import com.aquamanager.modules.lote.infrastructure.persistence.LoteRepository;
 import com.aquamanager.modules.mortalidade.application.dto.RegistroMortalidadeRequest;
+import com.aquamanager.modules.mortalidade.domain.CausaExclusao;
 import com.aquamanager.modules.mortalidade.domain.RegistroMortalidade;
 import com.aquamanager.modules.mortalidade.infrastructure.persistence.RegistroMortalidadeRepository;
 import com.aquamanager.modules.tanque.domain.Tanque;
@@ -32,9 +33,9 @@ import org.springframework.web.multipart.MultipartFile;
 public class RegistroMortalidadeServiceImpl implements RegistroMortalidadeService {
 
     private static final List<String> COLUNAS_IMPORTACAO = List.of(
-            "Tanque (código)", "Quantidade", "Data", "Motivo", "Observações");
+            "Tanque (código)", "Quantidade", "Data", "Causa", "Observações");
     private static final List<String> COLUNAS_OBRIGATORIAS = List.of(
-            "Tanque (código)", "Quantidade", "Data", "Motivo");
+            "Tanque (código)", "Quantidade", "Data", "Causa");
 
     private final RegistroMortalidadeRepository registroMortalidadeRepository;
     private final LoteRepository loteRepository;
@@ -129,13 +130,14 @@ public class RegistroMortalidadeServiceImpl implements RegistroMortalidadeServic
                     if (data == null) {
                         throw new IllegalArgumentException("Data é obrigatória.");
                     }
-                    String motivo = reader.texto(row, "Motivo");
-                    if (motivo == null) {
-                        throw new IllegalArgumentException("Motivo é obrigatório.");
+                    String textoCausa = reader.texto(row, "Causa");
+                    if (textoCausa == null) {
+                        throw new IllegalArgumentException("Causa é obrigatória.");
                     }
+                    CausaExclusao causa = parseCausa(textoCausa);
 
                     RegistroMortalidadeRequest request = new RegistroMortalidadeRequest(
-                            lote.getId(), quantidade, data, motivo, reader.texto(row, "Observações"));
+                            lote.getId(), quantidade, data, causa, reader.texto(row, "Observações"));
                     criar(empresaId, request);
                     importados++;
                 } catch (Exception e) {
@@ -159,17 +161,38 @@ public class RegistroMortalidadeServiceImpl implements RegistroMortalidadeServic
                 r.getLote().getTanque().getCodigo(),
                 r.getQuantidade(),
                 r.getData(),
-                r.getMotivo(),
+                rotuloCausa(r.getCausa()),
                 r.getObservacoes() != null ? r.getObservacoes() : ""
         )).toList();
-        return ExcelExportUtil.gerar("Mortalidade", COLUNAS_IMPORTACAO, linhas);
+        return ExcelExportUtil.gerar("Exclusao", COLUNAS_IMPORTACAO, linhas);
     }
 
     @Override
     public byte[] gerarModeloImportacao() {
         List<List<Object>> exemplo = List.of(List.<Object>of(
-                "TQ-01", 5, LocalDate.now(), "Causas naturais", "Observado durante alimentação"));
-        return ExcelExportUtil.gerar("Modelo Mortalidade", COLUNAS_IMPORTACAO, exemplo);
+                "TQ-01", 5, LocalDate.now(), "Morte", "Observado durante alimentação"));
+        return ExcelExportUtil.gerar("Modelo Exclusao", COLUNAS_IMPORTACAO, exemplo);
+    }
+
+    private static CausaExclusao parseCausa(String texto) {
+        String normalizado = java.text.Normalizer.normalize(texto.trim(), java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toUpperCase();
+        return switch (normalizado) {
+            case "RETIRADA PARA ABATE", "RETIRADA_ABATE" -> CausaExclusao.RETIRADA_ABATE;
+            case "TRANSFERENCIA" -> CausaExclusao.TRANSFERENCIA;
+            case "MORTE" -> CausaExclusao.MORTE;
+            default -> throw new IllegalArgumentException(
+                    "Causa \"" + texto + "\" inválida. Use: Retirada para abate, Transferência ou Morte.");
+        };
+    }
+
+    private static String rotuloCausa(CausaExclusao causa) {
+        return switch (causa) {
+            case RETIRADA_ABATE -> "Retirada para abate";
+            case TRANSFERENCIA -> "Transferência";
+            case MORTE -> "Morte";
+        };
     }
 
     private Lote resolverLoteAtivoPorTanque(UUID empresaId, String codigoTanque) {
@@ -219,7 +242,7 @@ public class RegistroMortalidadeServiceImpl implements RegistroMortalidadeServic
     private void aplicarCampos(RegistroMortalidade registro, RegistroMortalidadeRequest request) {
         registro.setQuantidade(request.quantidade());
         registro.setData(request.data());
-        registro.setMotivo(request.motivo());
+        registro.setCausa(request.causa());
         registro.setObservacoes(request.observacoes());
     }
 }

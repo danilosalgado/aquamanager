@@ -2,12 +2,20 @@ import { apiClient } from '@/lib/api-client'
 import { baixarBlob } from '@/lib/download'
 import type { ApiResponse, ImportResultado, PageResponse } from '@/types/api'
 
+export type CausaExclusao = 'RETIRADA_ABATE' | 'TRANSFERENCIA' | 'MORTE'
+
+export const CAUSA_EXCLUSAO_LABELS: Record<CausaExclusao, string> = {
+  RETIRADA_ABATE: 'Retirada para abate',
+  TRANSFERENCIA: 'Transferência',
+  MORTE: 'Morte',
+}
+
 export interface RegistroMortalidade {
   id: string
   loteId: string
   quantidade: number
   data: string
-  motivo: string
+  causa: CausaExclusao
   observacoes: string | null
 }
 
@@ -15,7 +23,7 @@ export interface RegistroMortalidadePayload {
   loteId: string
   quantidade: number
   data: string
-  motivo: string
+  causa: CausaExclusao
   observacoes?: string | null
 }
 

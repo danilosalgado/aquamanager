@@ -30,8 +30,8 @@ const relatoriosDisponiveis = [
   },
   {
     id: 'mortalidade',
-    titulo: 'Mortalidade',
-    descricao: 'Registros de perdas, motivos e lotes afetados.',
+    titulo: 'Exclusão',
+    descricao: 'Registros de saída de peixes, causas e lotes afetados.',
     icone: Skull,
     color: 'text-rose-500',
     bg: 'bg-rose-500/10',

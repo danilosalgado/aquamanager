@@ -4,6 +4,8 @@ import com.aquamanager.modules.lote.domain.Lote;
 import com.aquamanager.shared.domain.TenantAwareEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -30,8 +32,9 @@ public class RegistroMortalidade extends TenantAwareEntity {
     @Column(nullable = false)
     private LocalDate data;
 
-    @Column(nullable = false, length = 150)
-    private String motivo;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private CausaExclusao causa;
 
     @Column(columnDefinition = "TEXT")
     private String observacoes;

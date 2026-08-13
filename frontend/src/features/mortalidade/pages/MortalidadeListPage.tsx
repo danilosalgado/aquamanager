@@ -15,7 +15,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { mortalidadeApi, type RegistroMortalidade } from '../api/mortalidade-api'
+import { mortalidadeApi, CAUSA_EXCLUSAO_LABELS, type RegistroMortalidade } from '../api/mortalidade-api'
 import { MortalidadeFormDialog } from '../components/MortalidadeFormDialog'
 import { lotesApi } from '@/features/lotes/api/lotes-api'
 import { extractErrorMessage } from '@/lib/api-client'
@@ -58,12 +58,12 @@ export default function MortalidadeListPage() {
   return (
     <div>
       <PageHeader
-        title="Mortalidade"
-        description="Registros de perdas por lote para acompanhamento da sobrevivência."
+        title="Exclusão"
+        description="Registros de saída de peixes por lote (abate, transferência ou morte)."
         actions={
           <>
             <ImportExportButtons
-              entidadeLabel="Registros de mortalidade"
+              entidadeLabel="Registros de exclusão"
               onDownloadTemplate={mortalidadeApi.baixarModelo}
               onExport={mortalidadeApi.exportar}
               onImport={mortalidadeApi.importar}
@@ -87,8 +87,8 @@ export default function MortalidadeListPage() {
       ) : !data?.content.length ? (
         <EmptyState
           icon={Skull}
-          title="Nenhum registro de mortalidade"
-          description="Registre as perdas dos seus lotes para acompanhar a taxa de sobrevivência."
+          title="Nenhum registro de exclusão"
+          description="Registre as saídas dos seus lotes (abate, transferência ou morte) para acompanhar a taxa de sobrevivência."
           action={
             podeGerenciar && (
               <Button onClick={() => setFormOpen(true)}>
@@ -105,7 +105,7 @@ export default function MortalidadeListPage() {
                 <TableHead>Data</TableHead>
                 <TableHead>Lote</TableHead>
                 <TableHead>Quantidade</TableHead>
-                <TableHead>Motivo</TableHead>
+                <TableHead>Causa</TableHead>
                 <TableHead className="w-10" />
               </TableRow>
             </TableHeader>
@@ -118,12 +118,14 @@ export default function MortalidadeListPage() {
                   </TableCell>
                   <TableCell
                     className={cn(
-                      registro.quantidade >= LIMITE_QUANTIDADE_ALTA && 'font-semibold text-destructive',
+                      registro.causa === 'MORTE'
+                        && registro.quantidade >= LIMITE_QUANTIDADE_ALTA
+                        && 'font-semibold text-destructive',
                     )}
                   >
                     {formatNumber(registro.quantidade)}
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{registro.motivo}</TableCell>
+                  <TableCell className="text-muted-foreground">{CAUSA_EXCLUSAO_LABELS[registro.causa]}</TableCell>
                   <TableCell>
                     {podeGerenciar && (
                       <DropdownMenu>
@@ -164,7 +166,7 @@ export default function MortalidadeListPage() {
       <ConfirmDialog
         open={!!removing}
         onOpenChange={(open) => !open && setRemoving(null)}
-        title="Remover registro de mortalidade?"
+        title="Remover registro de exclusão?"
         description="Esta ação não pode ser desfeita."
         confirmLabel="Remover"
         loading={deleteMutation.isPending}

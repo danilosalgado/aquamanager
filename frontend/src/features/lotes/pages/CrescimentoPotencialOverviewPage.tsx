@@ -44,7 +44,7 @@ export default function CrescimentoPotencialOverviewPage() {
         <EmptyState
           icon={Target}
           title="Nenhum lote ativo"
-          description="Cadastre lotes e registre pesagens em Crescimento para ver as projeções aqui."
+          description="Cadastre lotes e registre pesagens em Biometria para ver as projeções aqui."
         />
       ) : (
         <div className="rounded-xl border border-border">

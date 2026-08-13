@@ -141,7 +141,7 @@ export default function LoteDetailPage() {
           ) : !potencial || potencial.taxaCrescimentoGDia == null ? (
             <p className="text-sm text-muted-foreground">
               Ainda não há dados suficientes para estimar o crescimento deste lote — registre ao menos uma
-              pesagem em Crescimento.
+              pesagem em Biometria.
             </p>
           ) : (
             <div className="flex flex-wrap gap-3">

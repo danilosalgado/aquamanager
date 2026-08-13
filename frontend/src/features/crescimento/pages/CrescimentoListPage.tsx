@@ -56,12 +56,12 @@ export default function CrescimentoListPage() {
   return (
     <div>
       <PageHeader
-        title="Crescimento"
+        title="Biometria"
         description="Acompanhamento de biometria e ganho de peso dos lotes."
         actions={
           <>
             <ImportExportButtons
-              entidadeLabel="Registros de crescimento"
+              entidadeLabel="Registros de biometria"
               onDownloadTemplate={crescimentoApi.baixarModelo}
               onExport={crescimentoApi.exportar}
               onImport={crescimentoApi.importar}
@@ -85,7 +85,7 @@ export default function CrescimentoListPage() {
       ) : !data?.content.length ? (
         <EmptyState
           icon={TrendingUp}
-          title="Nenhum registro de crescimento"
+          title="Nenhum registro de biometria"
           description="Registre biometrias periódicas para acompanhar o ganho de peso dos lotes."
           action={
             podeGerenciar && (

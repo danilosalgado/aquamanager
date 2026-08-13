@@ -75,16 +75,24 @@ public class RelatorioServiceImpl implements RelatorioService {
         LocalDate end = LocalDate.ofInstant(fim, ZoneId.systemDefault());
         List<RegistroMortalidade> registros = mortalidadeRepository.findByEmpresaIdAndDataBetween(empresaId, start, end);
         
-        String[] headers = {"Data", "Lote", "Quantidade", "Motivo", "Observações"};
+        String[] headers = {"Data", "Lote", "Quantidade", "Causa", "Observações"};
         String[][] data = registros.stream().map(r -> new String[]{
                 r.getData() != null ? r.getData().toString() : "",
                 r.getLote().getId().toString(),
                 String.valueOf(r.getQuantidade()),
-                r.getMotivo(),
+                rotuloCausa(r.getCausa()),
                 r.getObservacoes() != null ? r.getObservacoes() : ""
         }).toArray(String[][]::new);
 
-        return gerarArquivo("Relatório de Mortalidade", headers, data, formato);
+        return gerarArquivo("Relatório de Exclusão", headers, data, formato);
+    }
+
+    private static String rotuloCausa(com.aquamanager.modules.mortalidade.domain.CausaExclusao causa) {
+        return switch (causa) {
+            case RETIRADA_ABATE -> "Retirada para abate";
+            case TRANSFERENCIA -> "Transferência";
+            case MORTE -> "Morte";
+        };
     }
 
     @Override
