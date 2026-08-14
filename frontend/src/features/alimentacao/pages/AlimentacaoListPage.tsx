@@ -33,7 +33,7 @@ export default function AlimentacaoListPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['alimentacao', page],
-    queryFn: () => alimentacaoApi.listar({ page, size: 10 }),
+    queryFn: () => alimentacaoApi.listar({ page, size: 10, sort: 'horario,desc' }),
   })
 
   const { data: lotes } = useQuery({

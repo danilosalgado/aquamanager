@@ -23,7 +23,7 @@ export interface AlimentacaoPayload {
 }
 
 export const alimentacaoApi = {
-  listar: (params: { loteId?: string; page?: number; size?: number }) =>
+  listar: (params: { loteId?: string; page?: number; size?: number; sort?: string }) =>
     apiClient.get<ApiResponse<PageResponse<Alimentacao>>>('/alimentacao', { params }).then((r) => r.data.data),
 
   buscar: (id: string) => apiClient.get<ApiResponse<Alimentacao>>(`/alimentacao/${id}`).then((r) => r.data.data),
