@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Target, ChevronRight, TrendingUp } from 'lucide-react'
 import { PageHeader } from '@/components/shared/PageHeader'
@@ -22,6 +22,7 @@ function proximaMeta(potencial: CrescimentoPotencial) {
 }
 
 export default function CrescimentoPotencialOverviewPage() {
+  const navigate = useNavigate()
   const { data, isLoading } = useQuery({
     queryKey: ['lotes', 'crescimento-potencial'],
     queryFn: () => lotesApi.crescimentoPotencialTodosAtivos(),
@@ -64,11 +65,13 @@ export default function CrescimentoPotencialOverviewPage() {
                 const confiabilidade = confiabilidadeConfig[potencial.confiabilidade]
                 const meta = proximaMeta(potencial)
                 return (
-                  <TableRow key={potencial.loteId} className="cursor-pointer">
+                  <TableRow
+                    key={potencial.loteId}
+                    className="cursor-pointer hover:bg-accent/50"
+                    onClick={() => navigate(`/lotes/${potencial.loteId}`)}
+                  >
                     <TableCell className="font-medium">
-                      <Link to={`/lotes/${potencial.loteId}`} className="hover:text-primary hover:underline">
-                        {potencial.especieNome} · {potencial.tanqueNome}
-                      </Link>
+                      {potencial.especieNome} · {potencial.tanqueNome}
                     </TableCell>
                     <TableCell>{formatNumber(potencial.pesoAtualG, 0)} g</TableCell>
                     <TableCell className="text-muted-foreground">
@@ -96,9 +99,7 @@ export default function CrescimentoPotencialOverviewPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <Link to={`/lotes/${potencial.loteId}`}>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                      </Link>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     </TableCell>
                   </TableRow>
                 )
