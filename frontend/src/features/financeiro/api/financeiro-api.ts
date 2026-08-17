@@ -1,5 +1,6 @@
 import { apiClient } from '@/lib/api-client'
-import type { ApiResponse, PageResponse } from '@/types/api'
+import { baixarBlob } from '@/lib/download'
+import type { ApiResponse, ImportResultado, PageResponse } from '@/types/api'
 
 export interface Lancamento {
   id: string
@@ -60,4 +61,21 @@ export const financeiroApi = {
     apiClient
       .get<ApiResponse<ResumoFinanceiro>>('/financeiro/resumo', { params: { inicio, fim } })
       .then((r) => r.data.data),
+
+  importar: async (arquivo: File): Promise<ImportResultado> => {
+    const formData = new FormData()
+    formData.append('arquivo', arquivo)
+    const response = await apiClient.post<ApiResponse<ImportResultado>>('/financeiro/lancamentos/importar', formData)
+    return response.data.data
+  },
+
+  exportar: async () => {
+    const response = await apiClient.get('/financeiro/lancamentos/exportar', { responseType: 'blob' })
+    baixarBlob(response, 'financeiro.xlsx')
+  },
+
+  baixarModelo: async () => {
+    const response = await apiClient.get('/financeiro/lancamentos/importar/modelo', { responseType: 'blob' })
+    baixarBlob(response, 'modelo-financeiro.xlsx')
+  },
 }

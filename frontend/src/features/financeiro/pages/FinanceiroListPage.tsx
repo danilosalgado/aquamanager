@@ -8,6 +8,7 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { DataTablePagination } from '@/components/shared/DataTablePagination'
+import { ImportExportButtons } from '@/components/shared/ImportExportButtons'
 import { StatCard } from '@/components/shared/StatCard'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -109,11 +110,23 @@ export default function FinanceiroListPage() {
         title="Financeiro"
         description="Receitas, despesas e resumo financeiro da sua operação."
         actions={
-          podeGerenciar && (
-            <Button onClick={() => { setEditing(null); setFormOpen(true) }}>
-              <Plus className="h-4 w-4" /> Novo lançamento
-            </Button>
-          )
+          <>
+            <ImportExportButtons
+              entidadeLabel="Lançamentos financeiros"
+              onDownloadTemplate={financeiroApi.baixarModelo}
+              onExport={financeiroApi.exportar}
+              onImport={financeiroApi.importar}
+              onImportComplete={() => {
+                queryClient.invalidateQueries({ queryKey: ['financeiro-lancamentos'] })
+                queryClient.invalidateQueries({ queryKey: ['financeiro-resumo'] })
+              }}
+            />
+            {podeGerenciar && (
+              <Button onClick={() => { setEditing(null); setFormOpen(true) }}>
+                <Plus className="h-4 w-4" /> Novo lançamento
+              </Button>
+            )}
+          </>
         }
       />
 

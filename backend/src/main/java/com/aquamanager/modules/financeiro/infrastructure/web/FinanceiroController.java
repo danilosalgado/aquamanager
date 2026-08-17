@@ -5,6 +5,7 @@ import com.aquamanager.modules.financeiro.application.dto.LancamentoRequest;
 import com.aquamanager.modules.financeiro.application.dto.LancamentoResponse;
 import com.aquamanager.modules.financeiro.application.dto.ResumoFinanceiroResponse;
 import com.aquamanager.modules.financeiro.infrastructure.mapper.LancamentoMapper;
+import com.aquamanager.shared.infrastructure.excel.ImportResultado;
 import com.aquamanager.shared.infrastructure.security.SecurityUtils;
 import com.aquamanager.shared.infrastructure.web.ApiResponse;
 import com.aquamanager.shared.infrastructure.web.PageResponse;
@@ -14,6 +15,9 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/v1/financeiro")
@@ -81,5 +86,31 @@ public class FinanceiroController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim) {
         return ApiResponse.of(financeiroService.resumo(SecurityUtils.currentEmpresaId(), inicio, fim));
+    }
+
+    @PostMapping("/lancamentos/importar")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE')")
+    public ApiResponse<ImportResultado> importar(@RequestParam("arquivo") MultipartFile arquivo) {
+        var resultado = financeiroService.importar(SecurityUtils.currentEmpresaId(), arquivo);
+        return ApiResponse.of(resultado);
+    }
+
+    @GetMapping("/lancamentos/exportar")
+    public ResponseEntity<byte[]> exportar() {
+        byte[] arquivo = financeiroService.exportar(SecurityUtils.currentEmpresaId());
+        return arquivoExcel(arquivo, "financeiro.xlsx");
+    }
+
+    @GetMapping("/lancamentos/importar/modelo")
+    public ResponseEntity<byte[]> baixarModelo() {
+        byte[] arquivo = financeiroService.gerarModeloImportacao();
+        return arquivoExcel(arquivo, "modelo-financeiro.xlsx");
+    }
+
+    private ResponseEntity<byte[]> arquivoExcel(byte[] conteudo, String nomeArquivo) {
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + nomeArquivo + "\"")
+                .body(conteudo);
     }
 }
