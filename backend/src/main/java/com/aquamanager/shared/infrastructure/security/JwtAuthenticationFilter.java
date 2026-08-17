@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -26,6 +27,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final String BEARER_PREFIX = "Bearer ";
 
+    /**
+     * Endpoints que estabelecem uma identidade nova (login) ou não pressupõem
+     * nenhuma — nunca devem herdar tenant/autenticação de um Bearer token
+     * incidentalmente presente (ex.: sessão antiga ainda em memória no
+     * front-end). Sem isso, um token velho porém válido faz o RLS escopar a
+     * busca do usuário pelo tenant errado, e o login falha com credenciais
+     * corretas.
+     */
+    private static final Set<String> ENDPOINTS_SEM_CONTEXTO_PREVIO = Set.of(
+            "/api/v1/auth/login", "/api/v1/auth/register");
+
     private final JwtService jwtService;
 
     @Override
@@ -33,12 +45,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                      @NonNull HttpServletResponse response,
                                      @NonNull FilterChain filterChain) throws ServletException, IOException {
         try {
-            extractToken(request).flatMap(jwtService::parse).ifPresent(user -> {
-                var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-                TenantContext.setTenantId(user.getEmpresaId());
-            });
+            if (!ENDPOINTS_SEM_CONTEXTO_PREVIO.contains(request.getRequestURI())) {
+                extractToken(request).flatMap(jwtService::parse).ifPresent(user -> {
+                    var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                    TenantContext.setTenantId(user.getEmpresaId());
+                });
+            }
             filterChain.doFilter(request, response);
         } finally {
             TenantContext.clear();

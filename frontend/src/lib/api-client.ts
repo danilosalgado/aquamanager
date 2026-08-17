@@ -10,9 +10,15 @@ export const apiClient = axios.create({ baseURL, withCredentials: true })
 // Instância isolada só para o refresh — evita reentrar no interceptor de resposta.
 const refreshClient = axios.create({ baseURL, withCredentials: true })
 
+// Login/registro estabelecem uma identidade nova — nunca devem carregar o
+// Authorization de uma sessão antiga ainda em memória, senão o backend escopa
+// a busca do usuário pelo tenant errado (ver JwtAuthenticationFilter).
+const ENDPOINTS_SEM_TOKEN = ['/auth/login', '/auth/register']
+
 apiClient.interceptors.request.use((config) => {
   const token = useAuthStore.getState().accessToken
-  if (token) {
+  const exigeSemToken = ENDPOINTS_SEM_TOKEN.some((endpoint) => config.url?.includes(endpoint))
+  if (token && !exigeSemToken) {
     config.headers.Authorization = `Bearer ${token}`
   }
   return config
